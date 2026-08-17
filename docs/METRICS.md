@@ -16,7 +16,7 @@ decoration, and a definition with no history is an opinion.
 | KRI-002 | Mean time to remediate Critical/High findings | 105 days | ≤ 30 days | **Red** |
 | KRI-003 | Applicable Annex A controls implemented | 65.5% | ≥ 95% | **Red** |
 | KRI-004 | Controls tested within required frequency | 31.4% | ≥ 80% | **Red** |
-| KRI-005 | Risks above category appetite | 6 | 0 | **Red** |
+| KRI-005 | Risks above category appetite | 7 | 0 | **Red** |
 | KRI-006 | Evidence within validity period | 90.3% | ≥ 95% | Amber |
 | KRI-007 | Acceptances past expiry | 1 | 0 | Amber |
 
@@ -70,7 +70,7 @@ It reports the *same numbers* as the rest of the application — asserted agains
 overview and the risk summary — for a different audience, not a different set of facts.
 
 The metric worth noticing is **risks carried without a decision**: exposures above
-appetite with no live acceptance covering them. Currently six of six. An exposure carried
+appetite with no live acceptance covering them. Currently seven of seven. An exposure carried
 without a decision is worse than a documented acceptance, because nobody has agreed to
 it, and most tools cannot answer the question at all.
 

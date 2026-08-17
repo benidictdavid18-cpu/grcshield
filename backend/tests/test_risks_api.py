@@ -80,9 +80,10 @@ def test_register_summary_counts_breaches_and_outstanding_work(client):
     summary = client.get("/risks/summary").json()
     assert summary["total"] == 20
     assert summary["justifications_outstanding"] == 5
-    # Six, not five: RISK-008 crossed its Low ceiling when Phase 4's TEST-008 rated
-    # DP-005 ineffective and the reduction it was carrying had to be withdrawn.
-    assert summary["exceeding_appetite"] == 6
+    # Seven. Two of them arrived the same way: TEST-008 rated DP-005 ineffective,
+    # which withdrew the reduction RISK-008 was carrying, and forced RISK-018 back to
+    # its inherent level once its only preventive control was gone.
+    assert summary["exceeding_appetite"] == 7
     assert sum(summary["by_residual_band"].values()) == 20
     assert summary["bands"] == [
         {"band": "LOW", "min_score": 1, "max_score": 4},
@@ -95,7 +96,8 @@ def test_register_summary_counts_breaches_and_outstanding_work(client):
 def test_filter_to_risks_exceeding_appetite(client):
     breaching = client.get("/risks?exceeding_appetite=true").json()
     assert {r["risk_ref"] for r in breaching} == {
-        "RISK-002", "RISK-004", "RISK-008", "RISK-009", "RISK-010", "RISK-019",
+        "RISK-002", "RISK-004", "RISK-008", "RISK-009", "RISK-010", "RISK-018",
+        "RISK-019",
     }
     for risk in breaching:
         assert risk["appetite"]["exceeds_appetite"] is True

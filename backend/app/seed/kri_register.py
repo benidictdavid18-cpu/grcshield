@@ -130,7 +130,9 @@ KRI_DEFINITIONS: list[KriSpec] = [
             (date(2026, 4, 30), 4.0),
             (date(2026, 5, 31), 5.0),
             (date(2026, 6, 30), 5.0),
-            (date(2026, 7, 31), 5.0),
+            # Rose to 6 at the end of July when TEST-008 rated DP-005 ineffective and
+            # RISK-008 lost the reduction it had been carrying.
+            (date(2026, 7, 31), 6.0),
         ),
     ),
     KriSpec(

@@ -166,7 +166,8 @@ expiring-within-30-days.
 ### Consequence
 
 The register carries something most do not: **risks above appetite with no live acceptance
-covering them**. Currently six of six, because EXC-003 expired and EXC-004 was refused.
+covering them**. Currently seven of seven, because EXC-003 expired and EXC-004 was
+refused.
 An exposure carried without a decision is worse than a documented acceptance — nobody has
 agreed to it — and most tools cannot answer the question at all.
 

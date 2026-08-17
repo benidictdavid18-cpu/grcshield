@@ -72,7 +72,8 @@ def test_summary_surfaces_breaches_with_no_live_acceptance(client):
     # Every risk above appetite is currently uncovered: EXC-003 expired and EXC-004 was
     # refused, so nothing live covers RISK-010 or RISK-004.
     assert summary["uncovered_breaches"] == [
-        "RISK-002", "RISK-004", "RISK-008", "RISK-009", "RISK-010", "RISK-019",
+        "RISK-002", "RISK-004", "RISK-008", "RISK-009", "RISK-010", "RISK-018",
+        "RISK-019",
     ]
 
 

@@ -553,15 +553,23 @@ RISKS: list[RiskSpec] = [
         "Deliberate misuse by an authorised individual, or curiosity-driven browsing.",
         "Production access is broader than strictly necessary; monitoring is detective only.",
         3, 4,
-        2, 4,
-        f"{TODO} — the honest difficulty here is that every remaining control on this risk "
-        "is detective (OP-001 logging, AC-004 review). DP-005 was the one preventive "
-        "control and TEST-008 rated it INEFFECTIVE, so it earns no credit. Justify a "
-        "likelihood reduction on detective controls alone, or argue it should not move at "
-        "all. Note AC-003 is tested with exceptions.",
+        3, 4,
+        f"{TODO} — the reduction previously claimed here has been withdrawn, and the "
+        "paragraph needs writing to match. The position taken: no reduction is claimed. "
+        "Four points to make in your own words. (1) The threat statement covers two modes "
+        "— deliberate misuse and curiosity-driven browsing. (2) DP-005 masking was the only "
+        "control addressing the second mode, and TEST-008 rated it INEFFECTIVE. (3) What "
+        "remains either detects after the fact (OP-001) or manages access the engineer "
+        "legitimately holds (AC-003, AC-004); deterrence is not credited, on the same "
+        "reasoning that refuses credit to untested controls — it cannot be evidenced. "
+        "(4) State what would justify a reduction later: REM-017 closing and masking being "
+        "re-tested.",
         TreatmentDecision.MITIGATE,
-        "Access logging and quarterly review in place; least-privilege reduction in progress.",
-        date(2025, 9, 1), date(2026, 7, 18), date(2026, 10, 18),
+        "Access logging and quarterly review operate, but the only preventive control over "
+        "what an engineer can see is broken. Residual returns to inherent and the risk now "
+        "sits above the Operational ceiling. Closing REM-017 and re-testing DP-005 is the "
+        "route back; until then this needs treatment or a signed, expiring acceptance.",
+        date(2025, 9, 1), date(2026, 8, 16), date(2026, 10, 18),
         (("AC-003", Basis.TESTED_WITH_EXCEPTIONS), ("OP-001", Basis.TESTED_EFFECTIVE),
          ("AC-004", Basis.TESTED_EFFECTIVE), ("DP-005", Basis.TESTED_INEFFECTIVE),
          ("HR-001", Basis.TESTED_EFFECTIVE)),

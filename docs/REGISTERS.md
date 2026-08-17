@@ -58,8 +58,9 @@ a record of agreement, not of decisions.**
 ### The number nobody asks for
 
 The summary reports `uncovered_breaches`: risks above their category appetite with **no
-live acceptance covering them**. Currently that is all six — RISK-002, 004, 008, 009,
-010 and 019. EXC-003 expired and EXC-004 was refused, so nothing live covers any of them.
+live acceptance covering them**. Currently that is all seven — RISK-002, 004, 008, 009,
+010, 018 and 019. EXC-003 expired and EXC-004 was refused, so nothing live covers any of
+them.
 
 An exposure carried without a decision is worse than a documented acceptance, because
 nobody has agreed to it. Most acceptance registers cannot answer this question at all,

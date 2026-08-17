@@ -230,14 +230,36 @@ Five of the twenty residual justifications are deliberately unwritten, marked
 author's to write and are flagged in both the API and the UI rather than filled with
 plausible-sounding text.
 
-**Six** risks currently sit above their category appetite: RISK-002, RISK-004, RISK-008,
-RISK-009, RISK-010 and RISK-019.
+**Seven** risks currently sit above their category appetite: RISK-002, RISK-004,
+RISK-008, RISK-009, RISK-010, RISK-018 and RISK-019.
 
-RISK-008 is the sixth because of Phase 4. It previously claimed a reduction to residual 4
-on the basis that DP-005 masked the records support staff see. TEST-008 found the support
-replica holding roughly 12,000 unmasked customer records, DP-005 was rated
-`TESTED_INEFFECTIVE`, the credit was withdrawn, and the residual moved to 8 — above the
-Data Privacy ceiling of Low. See [TESTING.md](TESTING.md) for the full cascade.
+**Two of those seven arrived the same way**, and both trace to a single control test.
+
+**RISK-008** previously claimed a reduction to residual 4, on the basis that DP-005 masked
+the records support staff see. TEST-008 found the support replica holding roughly 12,000
+unmasked customer records. DP-005 was rated `TESTED_INEFFECTIVE`, the credit was
+withdrawn, and the residual moved to 8 — above the Data Privacy ceiling of Low.
+
+**RISK-018** was re-scored for the same reason, and it is the more interesting of the two.
+Its threat statement covers two modes: deliberate misuse by an authorised engineer, and
+curiosity-driven browsing. DP-005 was the only control addressing the second mode — if raw
+data is not visible by default, idle browsing returns nothing. What remains either detects
+after the fact (OP-001 logging) or manages access the engineer legitimately holds (AC-003,
+AC-004).
+
+The reduction previously claimed there rested on deterrence: people who know they are
+logged are less likely to misuse access deliberately. That argument is defensible in
+general, and it was rejected here for consistency — **this register does not credit what it
+cannot evidence**, which is the same principle that refuses credit to untested controls.
+Deterrence is unmeasurable, and crediting it would be the exact move rejected in
+[ADR-002](DECISIONS.md#adr-002--untested-controls-earn-no-residual-reduction).
+
+So residual returned to inherent at 12, and RISK-018 crossed the Operational ceiling of
+Medium. The register now demands a treatment decision or a signed, expiring acceptance,
+where before it said "within appetite, nothing to do" about a risk whose only preventive
+control was broken.
+
+See [TESTING.md](TESTING.md) for the full cascade.
 
 ## Limitations
 
