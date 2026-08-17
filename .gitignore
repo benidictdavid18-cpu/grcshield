@@ -9,3 +9,8 @@ dist/
 .vite/
 *.tsbuildinfo
 .DS_Store
+
+# Editor and tooling config
+.claude/
+.vscode/
+.idea/
