@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: grcshield
+      POSTGRES_PASSWORD: grcshield
+      POSTGRES_DB: grcshield
+    volumes:
+      - grcshield-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grcshield -d grcshield"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://grcshield:grcshield@db:5432/grcshield
+      ENVIRONMENT: development
+      # Demo default. Any real deployment must override this — the app logs a warning
+      # on startup if it is still in use outside development.
+      JWT_SECRET: ${JWT_SECRET:-dev-only-not-a-secret-change-me}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  web:
+    build: ./frontend
+    environment:
+      VITE_API_TARGET: http://api:8000
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+
+volumes:
+  grcshield-db:
