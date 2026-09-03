@@ -1,5 +1,21 @@
 import { useMemo, useState } from 'react'
 
+import {
+  AiAssistant,
+  AiConfidenceNote,
+  AiGaps,
+  AiList,
+  AiSection,
+  AiText,
+  type AiAction,
+} from '../AiAssistant'
+import {
+  aiApi,
+  type AiControlTestAssist,
+  type AiEnvelope,
+  type AiFindingDraft,
+  type AiRemediationAssist,
+} from '../ai'
 import { api, type ControlTestSummary } from '../api'
 import { useAsync } from '../useAsync'
 import {
@@ -13,8 +29,112 @@ import {
 
 type Tab = 'tests' | 'controls' | 'findings'
 
+/* --- Assistant bodies ----------------------------------------------------------
+ *
+ * Note what is not here. No conclusion, no design or operating rating, no severity, no
+ * owner, no due date. Those are not omitted from the rendering; they are absent from
+ * the response schema, so there is nothing to render.
+ */
+
+function TestAssistBody({ data }: { data: AiControlTestAssist }) {
+  const s = data.suggestion
+  return (
+    <>
+      <AiText heading="In short" value={s.summary} />
+      <AiText heading="What the evidence is said to show" value={s.evidence_summary} />
+      <AiList heading="Possible exceptions" items={s.possible_exceptions} />
+      <AiList heading="Evidence you might expect and cannot see" items={s.missing_evidence} />
+      <AiList heading="Follow-up questions" items={s.follow_up_questions} />
+      <AiList heading="Why an exception here might matter" items={s.why_it_might_matter} />
+      <AiList heading="Further testing to consider" items={s.additional_testing} />
+      <AiList heading="Observations" items={s.observations} />
+      <p className="muted">
+        The conclusion on this workpaper, and the control's design and operating ratings,
+        stay with the tester and the reviewer. The assistant has not seen the evidence
+        artifacts; it has read how they were described.
+      </p>
+      <AiGaps items={s.missing_information} />
+      <AiConfidenceNote confidence={s.confidence} />
+    </>
+  )
+}
+
+function FindingDraftBody({ data }: { data: AiFindingDraft }) {
+  const s = data.suggestion
+  return (
+    <>
+      <AiText heading="Draft title" value={s.draft_title} />
+      <AiText heading="Condition, what was found" value={s.condition} />
+      <AiText heading="Criteria, what was expected" value={s.criteria} />
+      <AiText heading="Risk and impact" value={s.risk_and_impact} />
+      <AiList heading="Possible root causes, as hypotheses" items={s.possible_root_causes} />
+      <AiText
+        heading="Suggested remediation language"
+        value={s.suggested_remediation_language}
+      />
+      <p className="muted">
+        This is the first step of test, draft finding, human review, final finding. No
+        finding has been created, no severity assigned and no status changed.
+      </p>
+      <AiGaps items={s.missing_information} />
+    </>
+  )
+}
+
+function RemediationBody({ data }: { data: AiRemediationAssist }) {
+  const s = data.suggestion
+  return (
+    <>
+      <AiSection heading="Correction and corrective action">
+        <dl className="ai-chain">
+          <dt>Correction, fixes this instance</dt>
+          <dd>{s.correction || 'Not stated'}</dd>
+          <dt>Corrective action, stops it recurring</dt>
+          <dd>{s.corrective_action || 'Not stated'}</dd>
+        </dl>
+        <p className="muted">
+          Clause 10.2 asks for both. A plan with only a correction produces the same
+          finding again next year.
+        </p>
+      </AiSection>
+      <AiList heading="Root cause questions to ask" items={s.root_cause_questions} />
+      <AiList heading="Steps" items={s.remediation_steps} />
+      <AiList
+        heading="Evidence that would justify closing it"
+        items={s.evidence_required_to_close}
+      />
+      {s.suggested_owner_role && (
+        <AiText heading="Suggested owner role" value={s.suggested_owner_role} />
+      )}
+      <AiText heading="Argument for the priority" value={s.priority_rationale} />
+      <p className="muted">
+        A role, not a person, and no date at all. Owners and deadlines are agreed with
+        the business; a date nobody agreed is not a plan.
+      </p>
+      <AiGaps items={s.missing_information} />
+    </>
+  )
+}
+
 function Workpaper({ testRef, onClose }: { testRef: string; onClose: () => void }) {
   const { data, error, loading } = useAsync(() => api.controlTest(testRef), [testRef])
+
+  const testActions: AiAction[] = [
+    {
+      key: 'analyse',
+      label: 'Analyse the workpaper',
+      hint: 'Evidence as described, possible exceptions, follow-up questions',
+      run: (question) => aiApi.controlTestAssist(testRef, question),
+      render: (result: AiEnvelope) => <TestAssistBody data={result as AiControlTestAssist} />,
+    },
+    {
+      key: 'finding',
+      label: 'Draft a finding',
+      hint: 'Condition, criteria, risk and impact, possible root causes',
+      run: (question) => aiApi.findingDraft(testRef, question),
+      render: (result: AiEnvelope) => <FindingDraftBody data={result as AiFindingDraft} />,
+    },
+  ]
 
   return (
     <aside className="drawer soa-drawer">
@@ -104,6 +224,14 @@ function Workpaper({ testRef, onClose }: { testRef: string; onClose: () => void 
               ? `Reviewed by ${data.reviewed_by} on ${data.review_date}. The reviewer cannot be the tester — a workpaper reviewed by its own author has not been reviewed.`
               : 'Not yet reviewed.'}
           </p>
+
+          <AiAssistant
+            title="AI test assistant"
+            lede="Reads this workpaper, the control it tests and how its evidence was
+                  described. It cannot record a conclusion, rate the control, or raise
+                  a finding."
+            actions={testActions}
+          />
         </>
       )}
     </aside>
@@ -331,6 +459,24 @@ export function Testing() {
                     {item.overdue && <span className="tag tag-breach">overdue</span>}
                   </p>
                 ))}
+                <AiAssistant
+                  title={`AI remediation assistant for ${finding.finding_ref}`}
+                  lede="Correction and corrective action are drafted as separate things,
+                        because Clause 10.2 asks for both. No owner is assigned and no
+                        date is proposed."
+                  actions={[
+                    {
+                      key: `remediation-${finding.finding_ref}`,
+                      label: 'Suggest correction and corrective action',
+                      hint: 'Plus the evidence that would justify closing it',
+                      run: (question) =>
+                        aiApi.remediationAssist(finding.finding_ref, question),
+                      render: (result: AiEnvelope) => (
+                        <RemediationBody data={result as AiRemediationAssist} />
+                      ),
+                    },
+                  ]}
+                />
               </article>
             ))}
           </div>

@@ -197,6 +197,58 @@ auditor would reasonably ask who lowered a residual score and when.
 
 ---
 
+## The AI assistant
+
+An optional local assistant (Ollama). It is treated as an external dependency and as an
+untrusted output source, even though it runs on the same machine.
+
+**Data leaving the machine: none.** Inference is local. That is the reason Ollama was
+chosen over a hosted API — an ISMS is a catalogue of an organisation's weaknesses, and
+sending it to a third party would be a processing activity needing a lawful basis, a
+RoPA entry, a transfer assessment and a supplier review.
+
+**What reaches the model.** Context is assembled per task from named fields, never by
+dumping records. `test_context_never_carries_a_credential` renders every context builder
+and asserts the result contains no password hash, no signing key, no database URL and no
+demo password — checked against the real values, not against field names, so it fails if
+a future builder reaches a user row by any route.
+
+**Prompt injection.** Record content is free text somebody typed. It is fenced, labelled,
+and preceded by a system prompt stating that instructions inside a fence are never
+followed; a record cannot close its own fence. No filter tries to detect attack phrasing,
+because "ignore all previous instructions" is legitimate content for a risk *about*
+prompt injection and a filter would corrupt the record while missing the next phrasing.
+
+**No user-supplied prompts.** The system message is assembled from constants. Request
+schemas use `extra="forbid"`, so a `system_prompt` field is a `422` rather than a field
+quietly ignored. The one free-text field is a bounded question, framed in the user
+message as a question rather than an instruction.
+
+**Untrusted output.** Responses are constrained to a JSON schema at generation and
+validated against it again on return; malformed output is a `502`, never a `500` and
+never a half-parsed suggestion rendered like a whole one. Claims of compliance,
+certification, verification or a test verdict are flagged to the analyst and logged.
+
+**No authority.** The assistant cannot write to any register. See ADR-009 in
+[docs/DECISIONS.md](docs/DECISIONS.md) for the three independent enforcement points and
+the reasoning.
+
+**What the log stores, and why it stores so little.** Who, when, which feature, which
+record, which model, what happened, sizes, and a truncated SHA-256 digest of the
+response. No prompt text and no response text: every prompt is built from records this
+database already holds under their own access control, and a second copy in a log table
+would add exposure without adding assurance.
+
+**Ollama has no authentication of its own.** `OLLAMA_BASE_URL` must stay on loopback or a
+private network; the application logs a warning at start-up if it does not. Exposing an
+Ollama instance to the internet publishes an unauthenticated inference endpoint.
+
+**Gap: no rate limiting on the assistant endpoints.** Request size is bounded and the
+model server is local, so the exposure is a slow endpoint rather than a bill — but it
+would be the first thing to add before this ran anywhere shared.
+
+---
+
 ## Known gaps
 
 Stated plainly. This is a portfolio project; the point is knowing what is missing, not

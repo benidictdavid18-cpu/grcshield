@@ -23,6 +23,17 @@ services:
       # Demo default. Any real deployment must override this — the app logs a warning
       # on startup if it is still in use outside development.
       JWT_SECRET: ${JWT_SECRET:-dev-only-not-a-secret-change-me}
+      # The AI assistant is optional and off unless Ollama is actually reachable.
+      # Ollama runs on the host, not in this network, so the container has to reach
+      # back out to it. Set AI_ENABLED=false to switch the feature off entirely; the
+      # GRC application is unaffected either way.
+      AI_ENABLED: ${AI_ENABLED:-true}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+    extra_hosts:
+      # host.docker.internal resolves on Docker Desktop already; this line is what
+      # makes it work on plain Linux Docker too.
+      - "host.docker.internal:host-gateway"
     depends_on:
       db:
         condition: service_healthy

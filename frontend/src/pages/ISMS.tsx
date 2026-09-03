@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { AiAssistant, AiGaps, AiList, AiSection, AiText, type AiAction } from '../AiAssistant'
+import { aiApi, type AiEnvelope, type AiPolicyDraft, type PolicyDocumentType } from '../ai'
 import { api, openReport } from '../api'
 import { useAsync } from '../useAsync'
 
@@ -11,6 +13,117 @@ function Field({ label, value }: { label: string; value: string | null | undefin
       <h4>{label}</h4>
       <p>{value ?? '—'}</p>
     </div>
+  )
+}
+
+const DOCUMENT_TYPES: { value: PolicyDocumentType; label: string }[] = [
+  { value: 'POLICY', label: 'Policy' },
+  { value: 'PROCEDURE', label: 'Procedure' },
+  { value: 'CONTROL_DESCRIPTION', label: 'Control description' },
+  { value: 'EVIDENCE_REQUEST', label: 'Evidence request' },
+  { value: 'COMPLIANCE_QUESTIONNAIRE', label: 'Compliance questionnaire' },
+]
+
+function PolicyDraftBody({ data }: { data: AiPolicyDraft }) {
+  const s = data.suggestion
+  return (
+    <>
+      <AiText heading="Working title" value={s.document_title} />
+      <AiText heading="Purpose" value={s.purpose} />
+      <AiText heading="Scope" value={s.scope} />
+      {s.sections.length > 0 && (
+        <AiSection heading="Sections">
+          {s.sections.map((section, index) => (
+            <div key={index} className="ai-doc-section">
+              <h5>{section.heading}</h5>
+              <p>{section.body}</p>
+            </div>
+          ))}
+        </AiSection>
+      )}
+      <AiList heading="Open questions the organisation has to answer" items={s.open_questions} />
+      <p className="muted">
+        A draft, and only a draft. Mentioning ISO 27001 does not make a document
+        compliant with it; that is determined by an assessment, and by an assessor.
+      </p>
+      <AiGaps items={s.missing_information} />
+    </>
+  )
+}
+
+/** Drafting sits on the ISMS records page because that is where the documented
+ *  information lives. The assistant writes against FinFlow's actual shape, taken from
+ *  the recorded scope: fully remote, no premises, one cloud region, a third-party
+ *  payment processor. The failure mode of a generic draft is a policy controlling
+ *  physical access to data centres for a company that has none. */
+function DraftingAssistant() {
+  const [documentType, setDocumentType] = useState<PolicyDocumentType>('POLICY')
+  const [topic, setTopic] = useState('')
+  const [refs, setRefs] = useState('')
+
+  const actions: AiAction[] = [
+    {
+      key: 'draft',
+      label: 'Draft it',
+      hint: 'Written for FinFlow as scoped, not for a generic company',
+      run: (question) =>
+        aiApi.policyDraft({
+          document_type: documentType,
+          topic: topic.trim(),
+          annex_a_refs: refs
+            .split(',')
+            .map((ref) => ref.trim())
+            .filter(Boolean)
+            .slice(0, 10),
+          question,
+        }),
+      render: (result: AiEnvelope) => <PolicyDraftBody data={result as AiPolicyDraft} />,
+    },
+  ]
+
+  return (
+    <AiAssistant
+      title="AI drafting assistant"
+      lede="Policies, procedures, control descriptions, evidence requests and
+            questionnaires. Drafts only, for a person to edit and own."
+      actions={actions}
+      extras={
+        <div className="ai-fields">
+          <label>
+            <span className="muted">Document type</span>
+            <select
+              value={documentType}
+              onChange={(event) => setDocumentType(event.target.value as PolicyDocumentType)}
+            >
+              {DOCUMENT_TYPES.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className="muted">Topic</span>
+            <input
+              type="text"
+              value={topic}
+              maxLength={200}
+              placeholder="e.g. privileged access to production"
+              onChange={(event) => setTopic(event.target.value)}
+            />
+          </label>
+          <label>
+            <span className="muted">Annex A controls it supports, comma separated</span>
+            <input
+              type="text"
+              value={refs}
+              placeholder="e.g. A.5.15, A.8.5"
+              onChange={(event) => setRefs(event.target.value)}
+            />
+          </label>
+        </div>
+      }
+    />
   )
 }
 
@@ -135,6 +248,7 @@ export function ISMS() {
           ))}
         </>
       )}
+      <DraftingAssistant />
     </section>
   )
 }

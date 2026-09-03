@@ -37,7 +37,14 @@ def check(name: str, condition: bool, detail: str = "") -> bool:
     return condition
 
 
-def request(base: str, path: str, token: str | None = None, method: str = "GET", body=None):
+def request(
+    base: str,
+    path: str,
+    token: str | None = None,
+    method: str = "GET",
+    body=None,
+    timeout: int = 30,
+):
     """Return (status, parsed_body_or_bytes)."""
     url = f"{base}{path}"
     data = json.dumps(body).encode() if body is not None else None
@@ -47,7 +54,7 @@ def request(base: str, path: str, token: str | None = None, method: str = "GET",
     if data:
         req.add_header("Content-Type", "application/json")
     try:
-        with urllib.request.urlopen(req, timeout=30) as response:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
             raw = response.read()
             if response.headers.get("Content-Type", "").startswith("application/json"):
                 return response.status, json.loads(raw)
@@ -233,6 +240,68 @@ def main() -> int:
                 )
                 for token in ("A.5.", "A.6.", "A.7.", "A.8.", "AC-0", "DP-0", "OP-0")
             ),
+        )
+
+    # --- The assistant ---------------------------------------------------------
+    #
+    # These checks pass whether or not Ollama is running, because that is the property
+    # being tested. The assistant is optional; a deployment gate that failed when a
+    # local model server was down would be asserting the opposite of the design.
+
+    status, _ = request(base, "/ai/status")
+    check("unauthenticated AI status is refused", status == 401, f"got {status}")
+    status, _ = request(
+        base, "/ai/risk-assist", method="POST", body={"risk_ref": "RISK-004"}
+    )
+    check("unauthenticated AI request is refused", status == 401, f"got {status}")
+
+    status, ai = request(base, "/ai/status", token=auditor)
+    if check("AI status resolves", status == 200, f"status {status}"):
+        check(
+            "status states that core functionality does not need AI",
+            ai.get("core_functionality_requires_ai") is False,
+        )
+        check("status explains itself", bool(ai.get("detail")))
+
+        before = request(base, "/risks/RISK-004", token=auditor)[1]
+        status, suggestion = request(
+            base,
+            "/ai/risk-assist",
+            token=auditor,
+            method="POST",
+            body={"risk_ref": "RISK-004"},
+            # A local model on a cold start is slow, and being slow is not a failure.
+            # The backend applies its own OLLAMA_TIMEOUT; this only has to outlast it.
+            timeout=180,
+        )
+
+        if ai.get("ready"):
+            print(f"    AI ready: {ai.get('provider')} / {ai.get('configured_model')}")
+            if check("assistant answers when it is ready", status == 200, f"status {status}"):
+                check("suggestion is labelled advisory", suggestion.get("advisory") is True)
+                check(
+                    "suggestion requires human review",
+                    suggestion.get("requires_human_review") is True,
+                )
+                check(
+                    "suggestion says what the model was given",
+                    len(suggestion.get("context_provided", [])) > 0,
+                )
+                check("interaction was logged", bool(suggestion.get("interaction_ref")))
+        else:
+            print(f"    AI not ready: {ai.get('detail')}")
+            check(
+                "an unavailable assistant is a 503, not a fault",
+                status == 503,
+                f"status {status}",
+            )
+
+        # The claim the whole feature rests on, checked against a live instance.
+        after = request(base, "/risks/RISK-004", token=auditor)[1]
+        check("RISK-004 is unchanged by the assistant", before == after)
+        check(
+            "the register still answers after an AI request",
+            request(base, "/risks/summary", token=auditor)[0] == 200,
         )
 
     _ = manager

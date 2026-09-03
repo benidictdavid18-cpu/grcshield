@@ -5,8 +5,9 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.deps import require_write
+from app.api.deps import current_user, require_write
 from app.api.routes import (
+    ai,
     auth,
     frameworks,
     health,
@@ -29,6 +30,15 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         logger.warning(
             "JWT_SECRET is still the built-in development default. Set JWT_SECRET before "
             "exposing this service to anything."
+        )
+    if settings.ai_enabled and not settings.ollama_host_is_local:
+        # Ollama has no authentication of its own. Pointing OLLAMA_BASE_URL at a public
+        # address publishes an unauthenticated inference endpoint to the internet, and
+        # the time to notice that is at start-up rather than in an incident review.
+        logger.warning(
+            "OLLAMA_BASE_URL (%s) is not a loopback or private address. Ollama has no "
+            "authentication; do not expose it to the public internet.",
+            settings.ollama_base_url,
         )
     yield
 
@@ -70,3 +80,11 @@ _protected = [
 ]
 for router in _protected:
     app.include_router(router, dependencies=[Depends(require_write)])
+
+# The assistant. Authenticated like everything else, but mounted on ``current_user``
+# rather than ``require_write``, because ``require_write`` decides what is a mutation by
+# HTTP method and these POSTs mutate nothing. They read records and return text; there
+# is no path from that router to a register write, and the response schemas have no
+# field capable of carrying a GRC decision. The reasoning is set out in full at the top
+# of app/api/routes/ai.py, and both claims are asserted in the test suite.
+app.include_router(ai.router, dependencies=[Depends(current_user)])

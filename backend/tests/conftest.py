@@ -30,6 +30,12 @@ from app.db.session import get_db  # noqa: E402
 from app.main import app as fastapi_app  # noqa: E402  (aliased: `app` is the package)
 from app.models.risk import Risk  # noqa: E402
 from app.seed import run_seed  # noqa: E402
+from app.services.ai.provider import (  # noqa: E402
+    AiProvider,
+    Completion,
+    ProviderStatus,
+)
+from app.services.ai.service import AIService, get_ai_service  # noqa: E402
 
 
 @pytest.fixture(scope="session")
@@ -151,3 +157,78 @@ def auditor_client(db_session):
             test_client, settings.demo_auditor_username, settings.demo_auditor_password
         )
     fastapi_app.dependency_overrides.clear()
+
+
+# --- The AI assistant ----------------------------------------------------------
+#
+# The suite must never need a running model server. A test that quietly depends on
+# Ollama being up is a test that fails on somebody else's machine, in CI, and on a
+# laptop with the service stopped -- and it would be testing the model rather than this
+# application. So the provider boundary is where the double goes: everything above it
+# is exercised for real, and the only thing replaced is the HTTP call to Ollama.
+
+
+class StubProvider(AiProvider):
+    """A provider whose answer, or failure, the test chooses."""
+
+    name = "stub"
+
+    def __init__(self) -> None:
+        self.response_text: str = "{}"
+        self.raises: Exception | None = None
+        self.status_result = ProviderStatus(
+            provider="stub",
+            configured_model="stub-model",
+            reachable=True,
+            model_available=True,
+            detail="Stub provider is ready.",
+            available_models=("stub-model",),
+            version="0.0.0-test",
+        )
+        # Every call is recorded so a test can assert on what was actually sent --
+        # which is how the prompt-injection and context-filtering tests work.
+        self.calls: list[dict] = []
+        self.status_calls = 0
+
+    def status(self) -> ProviderStatus:
+        self.status_calls += 1
+        return self.status_result
+
+    def complete(self, *, system_prompt, user_prompt, json_schema=None) -> Completion:
+        self.calls.append(
+            {
+                "system_prompt": system_prompt,
+                "user_prompt": user_prompt,
+                "json_schema": json_schema,
+            }
+        )
+        if self.raises is not None:
+            raise self.raises
+        return Completion(
+            text=self.response_text, model="stub-model", latency_ms=7, metadata={}
+        )
+
+    # Convenience for the common case.
+    def returns(self, payload: dict) -> "StubProvider":
+        import json as _json
+
+        self.response_text = _json.dumps(payload)
+        return self
+
+
+@pytest.fixture()
+def ai_provider() -> StubProvider:
+    return StubProvider()
+
+
+@pytest.fixture()
+def ai_service(ai_provider):
+    """Install a stubbed AIService for the duration of one test.
+
+    Substituted through ``dependency_overrides`` rather than by monkeypatching a module
+    global, so the replacement is visible in the test and cannot leak into another one.
+    """
+    service = AIService(ai_provider, get_settings())
+    fastapi_app.dependency_overrides[get_ai_service] = lambda: service
+    yield service
+    fastapi_app.dependency_overrides.pop(get_ai_service, None)

@@ -5,7 +5,7 @@ is what the rest of the test suite uses) and once by the Alembic chain (which is
 real deployment uses). Those two can drift silently — a column added to a model and
 forgotten in a migration produces a suite that passes and a deployment that fails.
 
-These tests run all six migrations end to end against a scratch database, then ask
+These tests run every migration end to end against a scratch database, then ask
 Alembic to compare the resulting schema against the model metadata and assert there is
 nothing left to generate.
 
@@ -62,11 +62,11 @@ def migrated(tmp_path, monkeypatch):
 def test_the_chain_is_linear_with_no_gaps_or_branches():
     script = ScriptDirectory(str(BACKEND_ROOT / "alembic"))
     revisions = list(script.walk_revisions())
-    assert len(revisions) == 6
+    assert len(revisions) == 7
     # Newest first; each must point at its predecessor.
     ordered = [r.revision for r in revisions][::-1]
-    assert ordered == ["0001", "0002", "0003", "0004", "0005", "0006"]
-    assert script.get_current_head() == "0006"
+    assert ordered == ["0001", "0002", "0003", "0004", "0005", "0006", "0007"]
+    assert script.get_current_head() == "0007"
     for revision in revisions:
         assert not isinstance(revision.down_revision, tuple), "no branching allowed"
 
@@ -75,7 +75,7 @@ def test_the_chain_runs_from_empty_to_head(migrated):
     version = migrated.connect().exec_driver_sql(
         "select version_num from alembic_version"
     ).scalar()
-    assert version == "0006"
+    assert version == "0007"
 
 
 def test_migrations_create_every_table_the_models_declare(migrated):
@@ -109,6 +109,10 @@ def test_key_tables_carry_their_columns(migrated):
     assert {"design_effectiveness", "operating_effectiveness", "last_tested"} <= controls
     remediation = {c["name"] for c in inspector.get_columns("remediation_items")}
     assert "raised_date" in remediation
+    # The AI layer owns exactly one table and adds no column to any GRC table.
+    interactions = {c["name"] for c in inspector.get_columns("ai_interactions")}
+    assert {"feature", "status", "response_digest", "guardrail_flags"} <= interactions
+    assert "prompt" not in interactions and "response" not in interactions
 
 
 def test_the_chain_is_reversible(tmp_path, monkeypatch):

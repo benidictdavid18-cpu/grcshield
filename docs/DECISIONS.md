@@ -3,7 +3,7 @@
 > **Sample / Portfolio Assessment.** FinFlow Technologies is a fictional company.
 > No certification body or audit firm has assessed any of this.
 
-Eight decisions that shaped this project, recorded in the form an architecture decision
+Nine decisions that shaped this project, recorded in the form an architecture decision
 record takes: what the situation was, what was chosen, what else was on the table, and
 what it cost.
 
@@ -341,3 +341,79 @@ let a real overstatement pass. Showing it puts the question in front of a human.
 
 > **TODO AUTHOR:BENNY — expand in my own words.**
 > If asked "why not just link the test?", the honest answer is scope — say so.
+
+---
+
+## ADR-009 — The assistant advises; it cannot decide
+
+**Status:** Accepted · **Affects:** the whole AI layer
+
+### Context
+
+A GRC tool with a language model in it has one interesting question and it is not
+"which model". It is: what happens when the model is wrong, and confident, and the
+person reading it is tired at 5pm on a Friday.
+
+The failure that matters is not a bad suggestion. It is a suggestion that reaches a
+register without a person having agreed to it — an AI-drafted finding that becomes the
+finding, a suggested control that becomes an applicability decision, a proposed score
+that becomes the residual. Every one of those would be indistinguishable, in the
+database, from a judgment somebody made and could defend.
+
+### Decision
+
+The assistant reads records and returns text beside them. It writes to exactly one
+table, `ai_interactions`, which is an activity log and not part of the management system.
+
+Enforced in three independent places, deliberately not in the prompt:
+
+1. **The response schema has no field capable of carrying a decision.** No likelihood,
+   impact, score, band, conclusion, design or operating effectiveness, severity, status,
+   approval, owner or date. The assistant has no vocabulary for a GRC decision.
+   `test_no_ai_response_model_can_express_a_grc_decision` walks every field of every
+   response model and fails the build if one appears.
+2. **There is no code path to a register write.**
+   `test_the_assistant_changes_no_grc_record` calls all seven endpoints and compares
+   eight register endpoints byte for byte before and after.
+3. **Output guardrails run over the model's own words.** A claim of compliance,
+   certification, verification or a test verdict is flagged to the analyst and recorded
+   in the log — flagged, not censored, on the same reasoning that surfaces an optimistic
+   effectiveness basis rather than blocking it. Visible beats silent.
+
+### Alternatives considered
+
+1. **Let the AI pre-fill fields the analyst then edits.** Rejected, and this is the
+   real decision. A pre-filled field is accepted far more often than it is edited; that
+   is the entire commercial argument for autofill. Applied to a residual justification
+   it produces a register full of text nobody wrote and nobody can defend — which is the
+   exact failure ADR-001 exists to prevent. The assistant returns a draft the analyst
+   has to move across deliberately.
+2. **Ask the model, in the prompt, not to make decisions.** Rejected as the *only*
+   control. A prompt is a request. It belongs in the system, and it is there, but a
+   request is not an enforcement point.
+3. **A hosted model API.** Rejected on the grounds this project would apply to any other
+   supplier. An ISMS is a catalogue of an organisation's weaknesses; sending it to a
+   third party is a processing activity needing a lawful basis, a RoPA entry, a transfer
+   assessment and a supplier review. Local inference removes the question instead of
+   answering it.
+4. **Store the prompt and response in the log.** Rejected. Every prompt is assembled
+   from records this database already holds under their own access control, and a second
+   copy in a log table adds exposure without adding assurance. A truncated response
+   digest ties a kept suggestion back to its interaction without retaining either text.
+
+### Consequence
+
+The assistant is less immediately impressive than one that fills the form in. That is
+the trade, and it is the right way round for this application: the value here was never
+the text, it was that every number in the register has a person behind it.
+
+Two costs worth stating. The AI router is mounted on `current_user` rather than
+`require_write`, because `require_write` decides what is a mutation by HTTP method and
+these POSTs mutate nothing — a departure from a rule this project otherwise applies
+uniformly. And the whole feature depends on a model good enough to be useful: control
+mapping asks a model to select from 93 Annex A controls, and a 3B model does it
+inconsistently.
+
+> **TODO AUTHOR:BENNY — expand in my own words.**
+> The question you will get is "so what does the AI actually add, if it cannot do
+> anything?" Have the answer ready — and it is not a defensive one.

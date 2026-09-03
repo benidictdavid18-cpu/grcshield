@@ -1674,3 +1674,312 @@ button.card-link {
     position: static;
   }
 }
+
+/* --- Local AI assistant -----------------------------------------------------
+ *
+ * Styled to sit *inside* the application rather than on top of it. Same surface
+ * colours, same radius, same type scale as every other panel. The one deliberate
+ * departure is the dashed border on a result: it reads as a draft rather than a
+ * record, which is exactly what it is.
+ */
+
+.ai-chip {
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.72rem;
+  gap: 0.4rem;
+  letter-spacing: 0.02em;
+  padding: 0.2rem 0.6rem;
+  white-space: nowrap;
+}
+
+.ai-dot {
+  border-radius: 50%;
+  height: 6px;
+  width: 6px;
+}
+
+.ai-chip-on .ai-dot {
+  background: var(--in);
+}
+
+.ai-chip-degraded .ai-dot {
+  background: var(--out);
+}
+
+.ai-chip-off .ai-dot {
+  background: var(--muted);
+}
+
+.ai-chip-model {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  opacity: 0.75;
+}
+
+.ai-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-top: 1.75rem;
+}
+
+.ai-toggle {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.9rem;
+  font-weight: 600;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  width: 100%;
+}
+
+.ai-toggle:hover {
+  color: var(--accent);
+}
+
+.ai-toggle-mark {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  width: 0.8rem;
+}
+
+.ai-toggle-hint {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  margin-left: auto;
+  text-transform: lowercase;
+}
+
+.ai-panel.is-open .ai-toggle {
+  border-bottom: 1px solid var(--border);
+}
+
+.ai-body {
+  padding: 1rem;
+}
+
+.ai-body > .muted {
+  margin-top: 0;
+}
+
+.ai-extras {
+  margin-bottom: 0.9rem;
+}
+
+.ai-fields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.ai-fields label,
+.ai-question {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  gap: 0.3rem;
+}
+
+.ai-question {
+  margin-top: 0.9rem;
+}
+
+.ai-fields input,
+.ai-fields select,
+.ai-question input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.ai-fields input:focus,
+.ai-fields select:focus,
+.ai-question input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ai-actions button {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.ai-actions button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.ai-actions button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ai-actions button:disabled {
+  cursor: progress;
+  opacity: 0.5;
+}
+
+/* Dashed, because it is a draft. A solid border here would read as a field. */
+.ai-result {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+}
+
+.ai-label {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.7rem;
+}
+
+.ai-label .muted {
+  font-size: 0.78rem;
+  margin: 0.45rem 0 0;
+}
+
+.ai-section {
+  margin-bottom: 1rem;
+}
+
+.ai-section h4 {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+}
+
+.ai-section p {
+  margin: 0;
+}
+
+.ai-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ai-list li {
+  border-left: 2px solid var(--border);
+  margin-bottom: 0.4rem;
+  padding-left: 0.7rem;
+}
+
+.ai-list-gaps li {
+  border-left-color: var(--out);
+}
+
+.ai-controls li {
+  border-left-color: var(--accent);
+  padding-bottom: 0.35rem;
+}
+
+.ai-controls p {
+  margin: 0.25rem 0 0;
+}
+
+.ai-chain {
+  display: grid;
+  gap: 0.2rem 0.9rem;
+  grid-template-columns: minmax(120px, auto) 1fr;
+  margin: 0;
+}
+
+.ai-chain dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.ai-chain dd {
+  margin: 0;
+}
+
+.ai-doc-section h5 {
+  font-size: 0.85rem;
+  margin: 0.6rem 0 0.2rem;
+}
+
+.ai-doc-section p {
+  margin: 0;
+}
+
+.ai-basis {
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+  padding-top: 0.7rem;
+}
+
+.ai-basis summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.ai-basis ul {
+  font-size: 0.8rem;
+  margin: 0.6rem 0;
+  padding-left: 1.1rem;
+}
+
+.ai-basis .muted {
+  font-size: 0.75rem;
+}
+
+.ai-confidence {
+  font-size: 0.75rem;
+}
+
+.ai-foot {
+  border-top: 1px solid var(--border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  margin: 0.9rem 0 0;
+  padding-top: 0.6rem;
+}
+
+/* Inside the workpaper drawer the panel is already in a narrow column, so it drops
+   its outer chrome and reads as another section of the drawer. */
+.drawer .ai-panel {
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  margin-top: 1.25rem;
+}
+
+.drawer .ai-toggle,
+.drawer .ai-body {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.finding-card .ai-panel {
+  margin-top: 1rem;
+}

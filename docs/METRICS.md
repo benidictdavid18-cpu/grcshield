@@ -133,8 +133,9 @@ validation — 403, not 422.
 
 ## Smoke test
 
-`scripts/smoke_test.py` runs 54 checks against a live instance and exits non-zero on the
-first failure, so it is usable as a deployment gate. It verifies the service is seeded,
+`scripts/smoke_test.py` runs 62 checks against a live instance — 66 when Ollama is
+running, the extra four being the ones that exercise the assistant — and exits non-zero
+on the first failure, so it is usable as a deployment gate. It verifies the service is seeded,
 that unauthenticated and forged-token reads are refused, that read-only really is
 read-only, and then walks the **RISK-004 chain end to end across all six phases**:
 
@@ -154,3 +155,10 @@ RISK-004  inherent 4x5=20 Critical, residual 3x5=15 High, impact unmoved
 ```bash
 python scripts/smoke_test.py --base-url http://localhost:8000
 ```
+
+The assistant checks pass in both directions, which is the property being tested. With
+Ollama running, `/ai/risk-assist` must answer, be labelled advisory, and name what it was
+shown. With Ollama stopped it must return `503`. Either way the run asserts that RISK-004
+is byte-identical before and after, and that the register still answers. A deployment gate
+that failed because a local model server was down would be asserting the opposite of the
+design.

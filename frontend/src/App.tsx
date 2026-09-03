@@ -1,5 +1,6 @@
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 
+import { AiStatusChip } from './AiAssistant'
 import { api } from './api'
 import { useAuth } from './auth'
 import { useAsync } from './useAsync'
@@ -61,6 +62,7 @@ export function App() {
           <NavLink to="/reports">Reports</NavLink>
         </nav>
         <div className="session">
+          <AiStatusChip />
           <span className="session-name">{session.fullName}</span>
           <span className={`role-chip ${session.canWrite ? '' : 'role-readonly'}`}>
             {session.canWrite ? session.role.replace('_', ' ').toLowerCase() : 'read-only'}

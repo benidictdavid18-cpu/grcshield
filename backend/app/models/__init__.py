@@ -1,3 +1,4 @@
+from app.models.ai import AiFeature, AiInteraction, AiInteractionStatus
 from app.models.audit import (
     AuditFinding,
     ControlTest,
@@ -54,6 +55,9 @@ from app.models.soa import (
 )
 
 __all__ = [
+    "AiFeature",
+    "AiInteraction",
+    "AiInteractionStatus",
     "Asset",
     "AuditFinding",
     "BiaAssetLink",

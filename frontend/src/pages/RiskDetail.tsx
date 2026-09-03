@@ -1,5 +1,21 @@
 import { Link, useParams } from 'react-router-dom'
 
+import {
+  AiAssistant,
+  AiConfidenceNote,
+  AiGaps,
+  AiList,
+  AiSection,
+  AiText,
+  type AiAction,
+} from '../AiAssistant'
+import {
+  aiApi,
+  type AiControlMapping,
+  type AiEnvelope,
+  type AiRiskAssist,
+  type AiRiskDescription,
+} from '../ai'
 import { api, type Score } from '../api'
 import { useAsync } from '../useAsync'
 import {
@@ -27,6 +43,117 @@ function ScoreBlock({ label, score, note }: { label: string; score: Score; note:
   )
 }
 
+/* --- Assistant bodies ---------------------------------------------------------
+ *
+ * One renderer per task. Each reads only from the validated response, so a field the
+ * model invented never reaches the page: the backend dropped it before it got here.
+ */
+
+function RiskAssistBody({ data }: { data: AiRiskAssist }) {
+  const s = data.suggestion
+  return (
+    <>
+      <AiText heading="In short" value={s.summary} />
+      <AiList heading="Threat scenarios to consider" items={s.threat_scenarios} />
+      <AiList heading="Vulnerabilities that would make them likelier" items={s.vulnerabilities} />
+      <AiList heading="Control areas worth looking at" items={s.control_areas} />
+      <AiList heading="Questions to investigate" items={s.questions_to_investigate} />
+      <AiList heading="Treatment options that exist in principle" items={s.treatment_options} />
+      <AiList heading="Observations" items={s.observations} />
+      <AiGaps items={s.missing_information} />
+      <AiConfidenceNote confidence={s.confidence} />
+    </>
+  )
+}
+
+function RiskDescriptionBody({ data }: { data: AiRiskDescription }) {
+  const s = data.suggestion
+  return (
+    <>
+      <AiSection heading="Threat, vulnerability, event, impact">
+        <dl className="ai-chain">
+          <dt>Threat</dt>
+          <dd>{s.threat || 'Not stated'}</dd>
+          <dt>Vulnerability</dt>
+          <dd>{s.vulnerability || 'Not stated'}</dd>
+          <dt>Event</dt>
+          <dd>{s.event || 'Not stated'}</dd>
+          <dt>Impact</dt>
+          <dd>{s.impact || 'Not stated'}</dd>
+        </dl>
+      </AiSection>
+      <AiText heading="Drafted statement" value={s.risk_statement} />
+      <p className="muted">
+        Nothing above has been saved. Putting it in the register is a separate,
+        deliberate act through the endpoints that validate it.
+      </p>
+      <AiGaps items={s.missing_information} />
+    </>
+  )
+}
+
+function ControlMappingBody({ data }: { data: AiControlMapping }) {
+  return (
+    <>
+      <AiText heading="In short" value={data.suggestion.summary} />
+
+      <AiSection heading="Annex A controls to consider">
+        {data.resolved_controls.length === 0 ? (
+          <p className="muted">
+            Nothing survived the catalogue check. Every identifier the model produced was
+            outside ISO/IEC 27001:2022 Annex A.
+          </p>
+        ) : (
+          <ul className="ai-list ai-controls">
+            {data.resolved_controls.map((control) => (
+              <li key={control.control_ref}>
+                <div className="chain-row">
+                  <code className="chain-ref">{control.control_ref}</code>
+                  <span>{control.title}</span>
+                  {control.already_linked && (
+                    <span className="tag tag-ok">already linked to this risk</span>
+                  )}
+                  {control.soa_applicable === false && (
+                    <span className="tag tag-warn">excluded in the SoA</span>
+                  )}
+                </div>
+                <p>{control.reason}</p>
+                {control.soa_implementation_status && (
+                  <p className="muted">
+                    Statement of Applicability:{' '}
+                    {control.soa_applicable ? 'applicable' : 'excluded'},{' '}
+                    {control.soa_implementation_status.replace(/_/g, ' ').toLowerCase()}.
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </AiSection>
+
+      {data.rejected_controls.length > 0 && (
+        <div className="banner banner-warn" role="note">
+          <strong>
+            {data.rejected_controls.length} suggested identifier
+            {data.rejected_controls.length === 1 ? ' was' : 's were'} dropped.
+          </strong>
+          <ul>
+            {data.rejected_controls.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <p className="muted">
+        A suggestion is not an applicability decision. Marking a control applicable, with
+        a justification that survives the SoA rules, stays with the analyst.
+      </p>
+      <AiGaps items={data.suggestion.missing_information} />
+    </>
+  )
+}
+
 export function RiskDetail() {
   const { riskRef = '' } = useParams()
   const { data: risk, error, loading } = useAsync(() => api.risk(riskRef), [riskRef])
@@ -34,6 +161,30 @@ export function RiskDetail() {
   if (loading) return <p className="empty">Loading risk…</p>
   if (error) return <p className="error">Could not load {riskRef}: {error}</p>
   if (!risk) return null
+
+  const riskActions: AiAction[] = [
+    {
+      key: 'summarise',
+      label: 'Summarise and challenge',
+      hint: 'Threat scenarios, vulnerabilities, and the questions an auditor would ask',
+      run: (question) => aiApi.riskAssist(riskRef, question),
+      render: (data: AiEnvelope) => <RiskAssistBody data={data as AiRiskAssist} />,
+    },
+    {
+      key: 'statement',
+      label: 'Draft the risk statement',
+      hint: 'Threat, vulnerability, event and impact, in the house structure',
+      run: (question) => aiApi.riskDescription({ risk_ref: riskRef, question }),
+      render: (data: AiEnvelope) => <RiskDescriptionBody data={data as AiRiskDescription} />,
+    },
+    {
+      key: 'controls',
+      label: 'Suggest Annex A controls',
+      hint: 'Chosen from the real 93-control catalogue, then checked back against it',
+      run: (question) => aiApi.controlMapping(riskRef, question),
+      render: (data: AiEnvelope) => <ControlMappingBody data={data as AiControlMapping} />,
+    },
+  ]
 
   const uncredited = risk.controls.filter((control) => !control.credits_reduction)
   const justificationOutstanding = risk.residual_justification.includes(TODO_MARKER)
@@ -202,6 +353,14 @@ export function RiskDetail() {
           <p>{risk.vulnerability}</p>
         </div>
       </div>
+
+      <AiAssistant
+        title="AI risk assistant"
+        lede="Runs against a model on this machine. It reads this risk, its linked
+              controls and the appetite for its category, and returns text. It cannot
+              change a score, a justification, a treatment decision or an appetite."
+        actions={riskActions}
+      />
     </section>
   )
 }

@@ -80,7 +80,12 @@ flowchart LR
         ROUTES["Routers<br/>risks · soa · testing · isms<br/>privacy · metrics · reports"]
         PDF["ReportLab<br/>3 reports + records export"]
     end
-    DB[("PostgreSQL 16<br/>6 Alembic migrations")]
+    subgraph AI["AI assistant — advisory, optional"]
+        AISVC["ai/service.py<br/>context · prompts · guardrails"]
+        PROV["AiProvider<br/>abstraction"]
+    end
+    DB[("PostgreSQL 16<br/>7 Alembic migrations")]
+    OLLAMA["Ollama<br/>local model server"]
 
     UI -- "Bearer token" --> AUTH
     AUTH --> ROUTES
@@ -88,10 +93,18 @@ flowchart LR
     RULES --> DB
     ROUTES --> PDF
     PDF --> UI
+    ROUTES -.-> AISVC
+    AISVC -- "reads records" --> DB
+    AISVC --> PROV
+    PROV -- "HTTP, localhost" --> OLLAMA
 ```
 
 Rules live in `services/`, separate from both routes and models, so the same validator
 runs on an API write, on a seed load, and in a unit test with no database at all.
+
+The dotted arrow is the point of the AI layer. It reads records and returns text beside
+them; there is no arrow from it back into the rules or the registers, and there is no
+code path that would draw one. The browser never talks to Ollama.
 
 ---
 
@@ -174,7 +187,7 @@ python scripts/capture_screenshots.py --base-url http://localhost:5173
 | SOC 2 criteria | 61 | Mapped *from* ISO, not assessed separately |
 | ISO → SOC 2 mappings | 127 | Typed equivalent / partial / supporting |
 | Internal controls | 35 | Distinct from the Annex A catalogue |
-| Risks | 20 | Across nine categories, 6 above appetite |
+| Risks | 20 | Across nine categories, 7 above appetite |
 | SoA entries | 93 | 84 applicable, 9 excluded, 65.5% implemented |
 | Evidence artifacts | 31 | With validity windows; 3 expired |
 | Remediation items | 20 | Owner and due date mandatory |
@@ -186,6 +199,7 @@ python scripts/capture_screenshots.py --base-url http://localhost:5173
 | BIA processes | 5 | RTO/RPO bounded by MTPD |
 | KRIs | 7 | Computed live, six-month trend |
 | Reports | 3 | PDF, plus an ISMS records export |
+| AI assistants | 7 | Local, advisory, and unable to change any of the above |
 
 ---
 
@@ -219,18 +233,209 @@ what testing is for. The cascade is asserted in
 
 ---
 
+## Local AI with Ollama
+
+An optional assistant, running entirely on your own machine. It helps a GRC analyst
+think; it does not do their job, and it cannot make a decision this system records.
+
+**The whole feature is optional.** With `AI_ENABLED=false`, or with Ollama simply not
+running, every register, report, validation rule and screen behaves exactly as it does
+without it. That is asserted rather than asserted-to: the smoke test passes 66 checks
+with Ollama running and 62 with it stopped, and the difference is only the checks that
+exist to test the assistant itself.
+
+### What the AI is doing
+
+Seven tasks, each tied to a record already in the system:
+
+| Assistant | Where | What it produces |
+| --- | --- | --- |
+| Risk | Risk detail | Threat scenarios, vulnerabilities, control areas, questions to investigate, treatment options |
+| Risk description | Risk detail | A risk statement as threat → vulnerability → event → impact |
+| Control mapping | Risk detail | Annex A controls to consider, checked against the real catalogue |
+| Control testing | Workpaper drawer | Evidence as described, possible exceptions, missing evidence, follow-up questions |
+| Audit finding | Workpaper drawer | Draft condition, criteria, risk and impact, possible root causes |
+| Remediation | Findings tab | Correction and corrective action, separately, and what closing would take |
+| Policy / procedure | ISMS records | Drafts written against FinFlow's actual scope |
+
+### Architecture
+
+```
+React                      the browser never talks to Ollama
+  │  POST /ai/...          bearer token, same auth as everything else
+  ▼
+FastAPI  app/api/routes/ai.py
+  ▼
+AIService  app/services/ai/service.py
+  ├── context.py      what the model is allowed to see — per task, named fields only
+  ├── prompts.py      what it is told — assembled server-side from constants
+  ├── response.py     what it is allowed to answer — a Pydantic schema, enforced twice
+  └── guardrails.py   fencing in, claim checking out
+  ▼
+AiProvider  (abstraction — swap the runtime, change one line of wiring)
+  ▼
+OllamaProvider  app/services/ai/ollama.py   the only module that knows Ollama exists
+  ▼
+Ollama on localhost:11434
+```
+
+### Installation
+
+1. Install Ollama from <https://ollama.com/download>.
+2. Pull a model:
+
+```bash
+ollama pull llama3.2:3b
+```
+
+3. Start the server, if the desktop app has not already:
+
+```bash
+ollama serve
+```
+
+Nothing is downloaded automatically. A model is a multi-gigabyte file and pulling one is
+your decision, so the application reports that the configured model is missing and tells
+you the command, rather than fetching it.
+
+### Configuring the model
+
+Any model Ollama holds. Nothing in the code depends on a particular one.
+
+```bash
+OLLAMA_MODEL=llama3.2:3b   # or mistral, qwen2.5, gpt-oss:20b …
+```
+
+`GET /ai/status` reports which of two different problems you have, because they need
+different fixes:
+
+```
+Ollama is not reachable at http://localhost:11434. Start it with 'ollama serve'.
+Ollama is running, but the configured model 'llama3.2:3b' is unavailable.
+  Pull it with 'ollama pull llama3.2:3b', or set OLLAMA_MODEL to one that is
+  present: gpt-oss:20b, qwen3-coder:30b.
+```
+
+### Environment variables
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `AI_ENABLED` | `true` | Master switch. `false` disables every assistant endpoint cleanly. |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Warned at start-up if it is not loopback or private. |
+| `OLLAMA_MODEL` | `llama3.2:3b` | A default, not an assumption. |
+| `OLLAMA_TIMEOUT` | `60` | Seconds. A timeout is a 503 and an explanation. |
+| `OLLAMA_NUM_CTX` | `8192` | Ollama defaults to 4096 whatever the model supports, and truncates in silence. |
+| `AI_MAX_INPUT_CHARS` | `12000` | Ceiling on record content in one prompt. |
+| `AI_MAX_QUESTION_CHARS` | `500` | Ceiling on the analyst's free-text question. |
+| `AI_STATUS_CACHE_SECONDS` | `30` | The status chip is on every page; it must not poll a model server. |
+| `AI_STRUCTURED_OUTPUT` | `true` | Send the response JSON schema as the generation format. |
+
+All of them are in [`.env.example`](.env.example) with the reasoning attached.
+
+### Running GRCShield with AI
+
+```bash
+ollama serve                       # terminal 1
+docker compose up --build          # terminal 2
+```
+
+From inside Docker, set `OLLAMA_BASE_URL=http://host.docker.internal:11434`; Ollama is on
+the host, not in the compose network. Running the backend directly, the default is right.
+
+The masthead carries a status chip: **AI: connected · llama3.2:3b**, or **AI: offline**
+with the detail on hover. Each assistant is a collapsed panel that does nothing until
+you open it.
+
+### What the AI can and cannot do
+
+It can summarise, question, explain, suggest and draft.
+
+It cannot — and this is enforced in three independent places, not requested in a prompt:
+
+| The rule | Where it is enforced |
+| --- | --- |
+| No score, band, conclusion, effectiveness rating, severity, approval, owner or date | The response schema has no field that could carry one. `test_no_ai_response_model_can_express_a_grc_decision` walks every field of every response model and fails the build if one appears. |
+| No write to any register | There is no code path from `routes/ai.py` to a register write. `test_the_assistant_changes_no_grc_record` calls every endpoint and compares eight register endpoints byte for byte before and after. |
+| No claim of compliance, certification, verification or a test verdict | Output guardrails scan the model's own words, flag the claim to the analyst, and record it in the interaction log. |
+
+Every response carries `advisory: true`, `requires_human_review: true`, the list of what
+the model was shown, and a link to its logged interaction. Those three are constants in
+the envelope, not values the model can influence.
+
+The one deliberate departure from the existing authorisation rule: the AI router is
+mounted on `current_user` rather than `require_write`. `require_write` decides what is a
+mutation by HTTP method, which is right for every other router and wrong for this one —
+these are POSTs because a risk record does not fit in a query string. A read-only auditor
+asking an assistant to summarise a workpaper is the read-only case, not an exception to
+it. The reasoning is at the top of `app/api/routes/ai.py`, and a test asserts both halves:
+the auditor can use the assistant, and the auditor still gets `403` on every register
+write.
+
+### Security and privacy
+
+**Inference is local, and that is the reason for choosing Ollama.** An ISMS is a
+catalogue of an organisation's weaknesses — accepted risks, failed control tests, DPIA
+findings. Sending that to a third-party inference API would be a processing activity in
+its own right, needing a lawful basis, a RoPA entry, a transfer assessment and a supplier
+review. Keeping inference local removes the question rather than answering it.
+
+- **Context is built, not dumped.** Each task assembles its own context from named
+  fields. `test_context_never_carries_a_credential` asserts the rendered prompt contains
+  no password hash, no signing key and no database URL, checked against the real values
+  rather than against field names.
+- **Prompt injection.** Record content is free text somebody typed, so it is fenced,
+  labelled, and preceded by a system prompt that says instructions inside a fence are
+  never followed. A record cannot close its own fence. No filter tries to detect
+  attack phrasing — "ignore all previous instructions" is legitimate text for a risk
+  *about* prompt injection, and a filter would corrupt the record while missing the next
+  phrasing.
+- **No user-supplied prompts.** The system message is assembled from constants. Requests
+  use `extra="forbid"`, so `{"system_prompt": "..."}` is a `422` rather than a field
+  quietly ignored.
+- **The log stores no prompt and no response.** Every prompt is built from records this
+  database already holds under their own access control; a second copy in a log table
+  would add exposure without adding assurance. What is stored is who, when, which
+  feature, which record, which model, what happened, and a truncated SHA-256 digest — so
+  a suggestion someone pasted into a workpaper can be tied back to the interaction that
+  produced it, without retaining the text of either.
+- **Ollama is treated as external** even though it is local: bounded timeouts, typed
+  failures, no assumption the response is well-formed, no assumption the server is there.
+- **Do not expose Ollama to the internet.** It has no authentication of its own. The app
+  logs a warning at start-up if `OLLAMA_BASE_URL` is not loopback or private.
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Chip says **AI: offline** | Ollama is not running | `ollama serve` |
+| Chip says **AI: model unavailable** | The model is not pulled | `ollama pull <model>`, or set `OLLAMA_MODEL` to one listed in `/ai/status` |
+| Chip is absent | `AI_ENABLED=false` | Set it to `true` and restart |
+| `503` on an assistant, everything else fine | Ollama stopped or timed out | Working as designed. Start Ollama, or raise `OLLAMA_TIMEOUT` |
+| `502` "did not return a JSON object" | The model ignores structured output | Try a different model; small ones are less reliable at this |
+| First request takes 30s or more | Cold model load | Normal. Ollama keeps the model resident afterwards |
+| Suggestions are thin, or control mapping returns nothing | The model is too small for the task | Control mapping asks a model to select from 93 controls. See the limitation below |
+| Docker: assistant unreachable | Ollama is on the host | `OLLAMA_BASE_URL=http://host.docker.internal:11434` |
+
+---
+
 ## Verification
 
 ```bash
-# 272 tests — rules, API contracts, and the migration chain
+# 372 tests — rules, API contracts, the migration chain, and the AI layer
 cd backend && pytest -q
 
 # Static integrity checks across every register, no database needed
 python scripts/check_seed_data.py
 
-# 54 end-to-end checks against a running instance, including the RISK-004 chain
+# 62 end-to-end checks against a running instance, including the RISK-004 chain
+# (66 when Ollama is running — the extra four exercise the assistant)
 python scripts/smoke_test.py --base-url http://localhost:8000
 ```
+
+The AI tests never contact Ollama. The provider boundary exists so a stub can answer
+instead, which is also the only way to test the cases that matter: a model returning
+prose where JSON was asked for, a model claiming the organisation is certified, a model
+citing a control identifier from the 2013 edition.
 
 The tests assert the *decisions*, not just that endpoints return 200: 93 controls in the
 right theme counts, exactly nine exclusions each carrying a substantive note, no SOC 2
@@ -238,7 +443,7 @@ mapping on an excluded control, RISK-004's impact staying at 5 while likelihood 
 auditor receiving 403 on every write path, and no control identifier leaking into board
 prose.
 
-`tests/test_migrations.py` runs all six migrations empty → head, downgrades back to base
+`tests/test_migrations.py` runs all seven migrations empty → head, downgrades back to base
 leaving nothing behind, and compares the resulting schema against the model metadata — so
 a model change with no matching migration fails the build. That check found nine indexes
 present in migrations and absent from the models.
@@ -249,20 +454,25 @@ present in migrations and absent from the models.
 
 ```
 backend/
-  alembic/versions/     6 migrations
+  alembic/versions/     7 migrations
   app/
-    api/routes/         auth, frameworks, risks, soa, testing, isms, privacy, metrics, reports
+    api/routes/         auth, frameworks, risks, soa, testing, isms, privacy, metrics,
+                        reports, ai
     core/               settings, password hashing, JWT
     db/                 declarative base, session
-    models/             frameworks, controls, risks, SoA, evidence, audit, privacy, KRI, users
+    models/             frameworks, controls, risks, SoA, evidence, audit, privacy, KRI,
+                        users, ai
     reports/            registry, and the three report renderers
     schemas/            pydantic request and response models
     seed/               every register, plus the loader that validates them
     services/           risk_scoring, soa_validation, control_testing, privacy_continuity,
                         kri_engine, executive
-  tests/                272 tests
+      ai/               provider, ollama, context, prompts, response, guardrails, service
+  tests/                372 tests
 frontend/
   src/pages/            dashboard, executive, risks, soa, testing, isms, registers, …
+  src/ai.ts             the assistant's API client
+  src/AiAssistant.tsx   the assistant panel and the masthead status chip
 scripts/
   check_seed_data.py    static integrity checks
   smoke_test.py         end-to-end verification against a live instance
@@ -273,7 +483,7 @@ docs/
   TESTING.md            design vs operating effectiveness, sampling, clause records
   REGISTERS.md          risk acceptance, RoPA, DPIA, business impact
   METRICS.md            KRIs, the executive view, access control
-  DECISIONS.md          eight decision records
+  DECISIONS.md          nine decision records
 SECURITY.md             controls implemented, and known gaps
 ```
 
@@ -303,11 +513,25 @@ rather than filling them with plausible text.
 
 - **`docker compose up` has not been executed.** Docker Desktop crashes at startup on the
   development machine with an unrelated fault. Everything is verified against SQLite
-  instead — 272 tests, the migration chain end to end, and 54 smoke checks against a live
-  server. The compose file and Dockerfiles are written but unproven, and PostgreSQL-specific
+  instead — 372 tests, the migration chain end to end, and 62 smoke checks against a live
+  server (66 with Ollama running). The compose file and Dockerfiles are written but unproven, and PostgreSQL-specific
   DDL (native `ENUM` creation in particular) is unexercised.
 - **No rate limiting, account lockout, password reset, or audit log of user actions.** See
   [SECURITY.md](SECURITY.md) for the complete list and the reasoning.
+- **The assistant is only as good as the model behind it.** Verified end to end against
+  Ollama 0.14.2 with `llama3.2:3b`. The risk, testing, finding and remediation assistants
+  produce useful text on that model. **Control mapping is unreliable on a 3B model** — it
+  is asked to select from 93 controls, and on repeated runs it returned anything from
+  four sensible suggestions to an empty list. The catalogue check catches the wrong
+  answers; it cannot manufacture right ones. A larger model is the fix, and `gpt-oss:20b`
+  was too slow to be interactive on the development machine (CPU-only inference, minutes
+  per request). The size of that gap is stated rather than hidden because it is the
+  honest state of local inference on a laptop.
+- **No rate limiting on the assistant endpoints.** Request size is bounded, and the model
+  server is local, so the exposure is a slow endpoint rather than a bill. It would still
+  be the first thing to add before this ran anywhere shared.
+- **The interaction log is append-only and never pruned.** Fine at demo volume; it needs
+  a retention rule before it is a real deployment.
 - `JWT_SECRET` ships with a published default so the demo needs no configuration. The app
   warns at startup if it is still in use outside development.
 - FinFlow is fictional, every rating is illustrative, and no audit was performed.
