@@ -407,6 +407,19 @@ The assistant is less immediately impressive than one that fills the form in. Th
 the trade, and it is the right way round for this application: the value here was never
 the text, it was that every number in the register has a person behind it.
 
+It also changed what the feature is for. The first version was a writer — draft this,
+summarise that — and a writer that cannot decide anything feels close to pointless, which
+is a fair criticism and was made. The answer was to use it as a **reviewer** instead. The
+consistency sweep reads every record that leans on one control and reports where they
+disagree; TEST-008 rated DP-005 ineffective while ROPA-003 still names it as a security
+measure, and no validation rule generalises that because the rule would have to be
+written once per pair of record types.
+
+Reviewing is the better fit for three reasons. It is what a language model is genuinely
+good at, where drafting is a commodity. A wrong flag costs thirty seconds, where a wrong
+draft that gets accepted costs a defensible register. And "cannot decide" stops being a
+limitation: a reviewer's job *is* to raise the question and leave it open.
+
 Two costs worth stating. The AI router is mounted on `current_user` rather than
 `require_write`, because `require_write` decides what is a mutation by HTTP method and
 these POSTs mutate nothing — a departure from a rule this project otherwise applies

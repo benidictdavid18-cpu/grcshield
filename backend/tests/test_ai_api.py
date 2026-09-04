@@ -105,6 +105,31 @@ PAYLOADS: dict[str, dict] = {
         "missing_information": [],
         "confidence": "medium",
     },
+    "/ai/consistency-sweep": {
+        "summary": "Two records disagree about whether masking is operating.",
+        "contradictions": [
+            {
+                "records": ["TEST-008", "ROPA-003"],
+                "what_disagrees": "The test rated the control ineffective; the processing "
+                "record still lists it as a security measure.",
+                "why_it_matters": "The processing record makes a claim to data subjects "
+                "about a protection that is not currently operating.",
+                "question_for_the_analyst": "Should ROPA-003 be updated, or is the test "
+                "scoped to a population the processing record does not cover?",
+            },
+            {
+                # Cites a record the model was never shown -- must be dropped.
+                "records": ["TEST-999"],
+                "what_disagrees": "Invented.",
+                "why_it_matters": "Invented.",
+                "question_for_the_analyst": "Invented.",
+            },
+        ],
+        "consistent_aspects": ["The control owner is the same in every record."],
+        "observations": [],
+        "missing_information": [],
+        "confidence": "medium",
+    },
     "/ai/policy-draft": {
         "summary": "Draft prepared for review.",
         "document_title": "Access Control Policy",
@@ -126,12 +151,18 @@ REQUESTS: dict[str, dict] = {
     "/ai/control-test-assist": {"test_ref": "TEST-003"},
     "/ai/finding-draft": {"test_ref": "TEST-003"},
     "/ai/remediation-assist": {"finding_ref": "FIND-001"},
+    "/ai/consistency-sweep": {"control_id": "DP-005"},
     "/ai/policy-draft": {"document_type": "POLICY", "topic": "Access control"},
 }
 
 FEATURE_PATHS = list(REQUESTS)
 
-READ_PATHS = ["/ai/status", "/ai/interactions", "/ai/interactions/summary"]
+READ_PATHS = [
+    "/ai/status",
+    "/ai/interactions",
+    "/ai/interactions/summary",
+    "/ai/consistency-candidates",
+]
 
 
 def _arm(provider, path: str) -> None:
@@ -526,3 +557,65 @@ def test_a_response_that_overclaims_is_flagged_to_the_analyst(client, ai_provide
 
     logged = client.get("/ai/interactions").json()[0]
     assert "asserted-compliance" in logged["guardrail_flags"]
+
+
+# --- The consistency sweep -----------------------------------------------------------
+
+
+def test_the_sweep_queue_needs_no_model_at_all(client, ai_service, ai_provider):
+    """The candidates endpoint is rules only. It answers with Ollama stopped."""
+    ai_provider.raises = AiUnavailable("Ollama is not running.")
+
+    rows = client.get("/ai/consistency-candidates").json()
+    assert rows, "the seeded data should offer somewhere to look"
+    assert "DP-005" in [row["control_id"] for row in rows]
+    assert ai_provider.calls == [], "the queue must not cost a model call"
+
+    dp005 = next(row for row in rows if row["control_id"] == "DP-005")
+    assert len(dp005["record_types"]) >= 2
+    assert dp005["reasons"]
+    assert dp005["record_count"] > 0
+
+
+def test_a_contradiction_citing_an_unseen_record_is_dropped_and_reported(
+    client, ai_provider, ai_service
+):
+    """The detail that makes the sweep trustworthy enough to act on.
+
+    The stub returns one real disagreement and one citing TEST-999, a record that was
+    never supplied. The real one survives; the invented one is removed from the findings
+    and named in uncited_records, because an analyst has to be able to tell which of
+    those two things happened.
+    """
+    _arm(ai_provider, "/ai/consistency-sweep")
+    body = client.post("/ai/consistency-sweep", json={"control_id": "DP-005"}).json()
+
+    found = body["suggestion"]["contradictions"]
+    assert len(found) == 1
+    assert found[0]["records"] == ["TEST-008", "ROPA-003"]
+    assert "TEST-999" in body["uncited_records"]
+
+    # And the reader can see exactly which records were compared.
+    assert "ROPA-003" in body["records_compared"]
+    assert "DP-005" in body["records_compared"]
+
+
+def test_the_sweep_reports_no_severity_and_no_verdict(client, ai_provider, ai_service):
+    """It raises the question. It does not settle it."""
+    _arm(ai_provider, "/ai/consistency-sweep")
+    body = client.post("/ai/consistency-sweep", json={"control_id": "DP-005"}).json()
+
+    item = body["suggestion"]["contradictions"][0]
+    assert set(item) == {
+        "records",
+        "what_disagrees",
+        "why_it_matters",
+        "question_for_the_analyst",
+    }
+    assert item["question_for_the_analyst"]
+
+
+def test_an_unknown_control_sweep_is_a_404(client, ai_service, ai_provider):
+    response = client.post("/ai/consistency-sweep", json={"control_id": "ZZ-999"})
+    assert response.status_code == 404
+    assert ai_provider.calls == []

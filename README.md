@@ -199,7 +199,7 @@ python scripts/capture_screenshots.py --base-url http://localhost:5173
 | BIA processes | 5 | RTO/RPO bounded by MTPD |
 | KRIs | 7 | Computed live, six-month trend |
 | Reports | 3 | PDF, plus an ISMS records export |
-| AI assistants | 7 | Local, advisory, and unable to change any of the above |
+| AI assistants | 8 | Local, advisory, and unable to change any of the above |
 
 ---
 
@@ -238,15 +238,23 @@ what testing is for. The cascade is asserted in
 An optional assistant, running entirely on your own machine. It helps a GRC analyst
 think; it does not do their job, and it cannot make a decision this system records.
 
+**The most useful thing it does is review, not write.** Drafting is what every tool
+with a language model in it does, and it is where hallucination hurts most. Reading a
+dozen records written by different people at different times and noticing that two of
+them can no longer both be true is comprehension work that no validation rule
+generalises — and it fits the "cannot decide" constraint exactly rather than despite
+it, because a reviewer's job is to raise the question, not settle it. That is the
+consistency sweep, and it is the feature to look at first.
+
 **The whole feature is optional.** With `AI_ENABLED=false`, or with Ollama simply not
 running, every register, report, validation rule and screen behaves exactly as it does
-without it. That is asserted rather than asserted-to: the smoke test passes 66 checks
-with Ollama running and 62 with it stopped, and the difference is only the checks that
+without it. That is asserted rather than asserted-to: the smoke test passes 69 checks
+with Ollama running and 65 with it stopped, and the difference is only the checks that
 exist to test the assistant itself.
 
 ### What the AI is doing
 
-Seven tasks, each tied to a record already in the system:
+Eight tasks, each tied to a record already in the system:
 
 | Assistant | Where | What it produces |
 | --- | --- | --- |
@@ -257,6 +265,36 @@ Seven tasks, each tied to a record already in the system:
 | Audit finding | Workpaper drawer | Draft condition, criteria, risk and impact, possible root causes |
 | Remediation | Findings tab | Correction and corrective action, separately, and what closing would take |
 | Policy / procedure | ISMS records | Drafts written against FinFlow's actual scope |
+| **Consistency sweep** | **Consistency** | **Where the records about one control disagree with each other** |
+
+### The consistency sweep, in more detail
+
+An ISMS goes wrong quietly. The same fact is recorded in several places, one of them is
+updated, and the others keep saying what used to be true. This project's own seed data
+has the case: **TEST-008 rated DP-005 ineffective, and ROPA-003 still lists DP-005 among
+its Article 30(1)(g) security measures** — a claim made to data subjects about a
+protection that is not currently operating.
+
+No validation rule catches that in general. The rule would have to be written once per
+pair of record types, and the interesting contradictions are the ones nobody predicted.
+
+**Rules pick the queue; the model does the reading.** `GET /ai/consistency-candidates` is
+a plain database query — controls referenced from several parts of the system that also
+carry some tension (a failed test, an open finding, expired evidence, a risk claiming
+more assurance than the library supports). Those are the only places a contradiction can
+exist at all. It costs one query, needs no model, and works with Ollama stopped.
+
+`POST /ai/consistency-sweep` then reads one control's records side by side: the library
+entry, its tests, the risks claiming it, its SoA entries, any GDPR processing record
+naming it, any recovery plan depending on it, its findings and its evidence.
+
+Every record reference the model cites is checked back against the references it was
+actually shown, and citations to records it was never given are dropped and reported. An
+invented disagreement between two real-sounding record numbers is the worst thing this
+feature could produce, so it is named when it happens.
+
+And it reports no severity and no verdict. Which record is right — often neither, because
+the world moved and only one was updated — is the analyst's call.
 
 ### Architecture
 
@@ -421,14 +459,14 @@ review. Keeping inference local removes the question rather than answering it.
 ## Verification
 
 ```bash
-# 372 tests — rules, API contracts, the migration chain, and the AI layer
+# 386 tests — rules, API contracts, the migration chain, and the AI layer
 cd backend && pytest -q
 
 # Static integrity checks across every register, no database needed
 python scripts/check_seed_data.py
 
-# 62 end-to-end checks against a running instance, including the RISK-004 chain
-# (66 when Ollama is running — the extra four exercise the assistant)
+# 65 end-to-end checks against a running instance, including the RISK-004 chain
+# (69 when Ollama is running — the extra four exercise the assistant)
 python scripts/smoke_test.py --base-url http://localhost:8000
 ```
 
@@ -443,7 +481,7 @@ mapping on an excluded control, RISK-004's impact staying at 5 while likelihood 
 auditor receiving 403 on every write path, and no control identifier leaking into board
 prose.
 
-`tests/test_migrations.py` runs all seven migrations empty → head, downgrades back to base
+`tests/test_migrations.py` runs all eight migrations empty → head, downgrades back to base
 leaving nothing behind, and compares the resulting schema against the model metadata — so
 a model change with no matching migration fails the build. That check found nine indexes
 present in migrations and absent from the models.
@@ -454,7 +492,7 @@ present in migrations and absent from the models.
 
 ```
 backend/
-  alembic/versions/     7 migrations
+  alembic/versions/     8 migrations
   app/
     api/routes/         auth, frameworks, risks, soa, testing, isms, privacy, metrics,
                         reports, ai
@@ -468,7 +506,7 @@ backend/
     services/           risk_scoring, soa_validation, control_testing, privacy_continuity,
                         kri_engine, executive
       ai/               provider, ollama, context, prompts, response, guardrails, service
-  tests/                372 tests
+  tests/                386 tests
 frontend/
   src/pages/            dashboard, executive, risks, soa, testing, isms, registers, …
   src/ai.ts             the assistant's API client
@@ -513,8 +551,8 @@ rather than filling them with plausible text.
 
 - **`docker compose up` has not been executed.** Docker Desktop crashes at startup on the
   development machine with an unrelated fault. Everything is verified against SQLite
-  instead — 372 tests, the migration chain end to end, and 62 smoke checks against a live
-  server (66 with Ollama running). The compose file and Dockerfiles are written but unproven, and PostgreSQL-specific
+  instead — 386 tests, the migration chain end to end, and 65 smoke checks against a live
+  server (69 with Ollama running). The compose file and Dockerfiles are written but unproven, and PostgreSQL-specific
   DDL (native `ENUM` creation in particular) is unexercised.
 - **No rate limiting, account lockout, password reset, or audit log of user actions.** See
   [SECURITY.md](SECURITY.md) for the complete list and the reasoning.

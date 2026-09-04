@@ -44,6 +44,7 @@ class AiFeature(str, enum.Enum):
     FINDING_DRAFT = "FINDING_DRAFT"
     REMEDIATION_ASSIST = "REMEDIATION_ASSIST"
     POLICY_DRAFT = "POLICY_DRAFT"
+    CONSISTENCY_SWEEP = "CONSISTENCY_SWEEP"
 
 
 class AiInteractionStatus(str, enum.Enum):

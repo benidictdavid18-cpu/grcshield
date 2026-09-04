@@ -21,6 +21,7 @@ export type AiFeature =
   | 'FINDING_DRAFT'
   | 'REMEDIATION_ASSIST'
   | 'POLICY_DRAFT'
+  | 'CONSISTENCY_SWEEP'
 
 export type AiConfidence = 'low' | 'medium' | 'high'
 
@@ -138,6 +139,33 @@ export interface AiRemediationAssist extends AiEnvelope {
 }
 export interface AiPolicyDraft extends AiEnvelope {
   suggestion: PolicyDraftSuggestion
+}
+
+export interface Contradiction {
+  records: string[]
+  what_disagrees: string
+  why_it_matters: string
+  question_for_the_analyst: string
+}
+
+export interface ConsistencySweepSuggestion extends AiSuggestionBase {
+  contradictions: Contradiction[]
+  consistent_aspects: string[]
+}
+
+export interface AiConsistencySweep extends AiEnvelope {
+  suggestion: ConsistencySweepSuggestion
+  uncited_records: string[]
+  records_compared: string[]
+}
+
+/** A control the rules say is worth asking about. Computed without the model. */
+export interface SweepCandidate {
+  control_id: string
+  title: string
+  record_count: number
+  record_types: string[]
+  reasons: string[]
 }
 
 export interface AiStatus {
@@ -282,6 +310,12 @@ export const aiApi = {
     annex_a_refs?: string[]
     question?: string
   }) => postJson<AiPolicyDraft>('/ai/policy-draft', body),
+  consistencyCandidates: () => getJson<SweepCandidate[]>('/ai/consistency-candidates'),
+  consistencySweep: (controlId: string, question?: string) =>
+    postJson<AiConsistencySweep>('/ai/consistency-sweep', {
+      control_id: controlId,
+      question: question || null,
+    }),
   interactions: (params: Record<string, string> = {}) => {
     const query = new URLSearchParams(params).toString()
     return getJson<AiInteraction[]>('/ai/interactions' + (query ? '?' + query : ''))

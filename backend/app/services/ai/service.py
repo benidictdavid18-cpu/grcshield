@@ -472,6 +472,28 @@ def check_control_refs(
     return known, rejected
 
 
+def check_record_refs(
+    cited: list[str], supplied: set[str]
+) -> tuple[list[str], list[str]]:
+    """Split cited record references into ones the model was shown and ones it was not.
+
+    The same idea as the Annex A catalogue check, applied to the sweep. A contradiction
+    is only worth anything if the analyst can go and read the two records; a citation to
+    a record that was never supplied is a fabrication, and it is the failure mode that
+    would do the most damage here -- an invented disagreement between two real-sounding
+    references reads exactly like a real one.
+    """
+    known: list[str] = []
+    rejected: list[str] = []
+    for raw in cited:
+        ref = raw.strip().upper()
+        if ref in supplied:
+            known.append(ref)
+        else:
+            rejected.append(raw.strip()[:60])
+    return known, rejected
+
+
 # --- Wiring -------------------------------------------------------------------
 
 

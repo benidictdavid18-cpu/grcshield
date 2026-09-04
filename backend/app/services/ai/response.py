@@ -148,6 +148,26 @@ class RemediationSuggestion(Suggestion):
     priority_rationale: str = Field(default="", max_length=MAX_ITEM_CHARS)
 
 
+class Contradiction(_Base):
+    """One place where two records disagree about the same fact.
+
+    Note what is not here: no severity, no verdict, no "this record is wrong". Which
+    record is right is a judgment, and often the answer is that neither is -- the world
+    moved and nobody updated either. The assistant reports the disagreement and asks the
+    question; a person settles it.
+    """
+
+    records: list[str] = Field(default_factory=list, max_length=6)
+    what_disagrees: str = Field(default="", max_length=MAX_TEXT_CHARS)
+    why_it_matters: str = Field(default="", max_length=MAX_TEXT_CHARS)
+    question_for_the_analyst: str = Field(default="", max_length=MAX_ITEM_CHARS)
+
+
+class ConsistencySweepSuggestion(Suggestion):
+    contradictions: list[Contradiction] = Field(default_factory=list, max_length=MAX_ITEMS)
+    consistent_aspects: list[str] = Field(default_factory=list, max_length=MAX_ITEMS)
+
+
 class PolicySection(_Base):
     heading: str = Field(default="", max_length=200)
     body: str = Field(default="", max_length=MAX_TEXT_CHARS)

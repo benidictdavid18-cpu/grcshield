@@ -27,6 +27,7 @@ from app.services.ai.provider import (
     InvalidAiResponse,
 )
 from app.services.ai.response import (
+    ConsistencySweepSuggestion,
     ControlMappingSuggestion,
     ControlTestSuggestion,
     FindingDraftSuggestion,
@@ -41,6 +42,7 @@ from app.services.ai.response import (
 from app.services.ai.service import (
     AIService,
     check_control_refs,
+    check_record_refs,
     output_guardrail_notes,
 )
 
@@ -324,6 +326,7 @@ _DECISION_WORDS = (
 
 _ALL_RESPONSE_MODELS = [
     Suggestion,
+    ConsistencySweepSuggestion,
     RiskAssistSuggestion,
     RiskDescriptionSuggestion,
     ControlMappingSuggestion,
@@ -603,3 +606,83 @@ def test_a_public_ollama_url_is_recognised_as_not_local():
     assert Settings(ollama_base_url="http://localhost:11434").ollama_host_is_local
     assert Settings(ollama_base_url="http://192.168.1.40:11434").ollama_host_is_local
     assert not Settings(ollama_base_url="http://ollama.example.com:11434").ollama_host_is_local
+
+
+# --- The consistency sweep ---------------------------------------------------------
+
+
+def test_the_sweep_gathers_every_record_that_leans_on_a_control(db_session):
+    """DP-005 is the case the whole feature exists for.
+
+    A test rated it ineffective. A GDPR processing record still names it as a security
+    measure. Those two records cannot both be describing the same world, and nothing in
+    the validation layer can catch it -- there is no rule that says "a processing record
+    must not cite an ineffective control", and writing one per pair of record types is
+    not a strategy. Reading them side by side is.
+    """
+    record, supplied = ai_context.consistency_context(db_session, "DP-005")
+    rendered = record.render(max_chars=60_000)
+
+    assert record.entity_type == "CONTROL"
+    assert record.entity_ref == "DP-005"
+
+    # The control library's own verdict, and the record that still relies on it.
+    assert "Operating effectiveness: INEFFECTIVE" in rendered
+    assert "gdpr processing records naming it as a security measure" in rendered
+    assert "ROPA-003" in supplied
+    assert "TEST-008" in supplied
+
+    # Every reference in the set is one the model was actually shown.
+    for ref in supplied:
+        assert ref in rendered
+
+
+def test_the_sweep_context_reports_what_it_compared(db_session):
+    record, supplied = ai_context.consistency_context(db_session, "DP-005")
+    labels = {item.label for item in record.items}
+    assert {"Control", "Library rating", "Records compared", "References supplied"} <= labels
+    assert len(supplied) > 1
+
+
+def test_an_unknown_control_is_a_context_error(db_session):
+    with pytest.raises(ai_context.ContextNotFound):
+        ai_context.consistency_context(db_session, "ZZ-999")
+
+
+def test_the_sweep_queue_is_chosen_by_rules_not_by_the_model(db_session):
+    """The queue costs one query. Only the reading costs a model call."""
+    candidates = ai_context.sweep_candidates(db_session)
+    assert candidates, "the seeded data should offer somewhere to look"
+
+    by_id = {candidate.control_id: candidate for candidate in candidates}
+    assert "DP-005" in by_id
+
+    dp005 = by_id["DP-005"]
+    assert len(dp005.record_types) >= 2, "one record type cannot disagree with itself"
+    assert any("ineffective" in reason.lower() for reason in dp005.reasons)
+    assert any("gdpr" in reason.lower() or "data subject" in reason.lower() for reason in dp005.reasons)
+
+    # Most tension first.
+    assert candidates[0].reasons
+    assert len(candidates[0].reasons) >= len(candidates[-1].reasons)
+
+
+def test_every_candidate_can_actually_be_swept(db_session):
+    """A queue entry that 404s would be worse than no queue."""
+    for candidate in ai_context.sweep_candidates(db_session):
+        record, supplied = ai_context.consistency_context(db_session, candidate.control_id)
+        assert supplied
+        assert record.sections
+
+
+def test_a_cited_record_the_model_was_never_shown_is_rejected():
+    """The failure mode that would do the most damage here.
+
+    An invented disagreement between two real-sounding record numbers reads exactly like
+    a real one. The only defence is to check the citation against what was supplied.
+    """
+    supplied = {"DP-005", "TEST-008", "ROPA-003"}
+    known, rejected = check_record_refs(["TEST-008", "ropa-003", "TEST-999"], supplied)
+
+    assert known == ["TEST-008", "ROPA-003"]
+    assert rejected == ["TEST-999"]

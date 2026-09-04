@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.core.config import get_settings
 from app.models.ai import AiFeature, AiInteractionStatus
 from app.services.ai.response import (
+    ConsistencySweepSuggestion,
     ControlMappingSuggestion,
     ControlTestSuggestion,
     FindingDraftSuggestion,
@@ -98,6 +99,10 @@ class FindingDraftIn(QuestionMixin):
 
 class RemediationAssistIn(QuestionMixin):
     finding_ref: str = Field(min_length=3, max_length=24)
+
+
+class ConsistencySweepIn(QuestionMixin):
+    control_id: str = Field(min_length=2, max_length=24)
 
 
 class PolicyDocumentType(str, Enum):
@@ -210,6 +215,31 @@ class RemediationAssistOut(AiEnvelope):
 
 class PolicyDraftOut(AiEnvelope):
     suggestion: PolicyDraftSuggestion
+
+
+class SweepCandidateOut(BaseModel):
+    """A control the rules say is worth asking about, and why.
+
+    Computed without the model. The queue costs one query; only the reading costs a
+    model call.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    control_id: str
+    title: str
+    record_count: int
+    record_types: list[str]
+    reasons: list[str]
+
+
+class ConsistencySweepOut(AiEnvelope):
+    suggestion: ConsistencySweepSuggestion
+    # References the model cited that it was never shown. Reported rather than hidden:
+    # an invented disagreement between two real-sounding records is the worst thing this
+    # feature could produce, so it is named when it happens.
+    uncited_records: list[str] = Field(default_factory=list)
+    records_compared: list[str] = Field(default_factory=list)
 
 
 class AiStatusOut(BaseModel):

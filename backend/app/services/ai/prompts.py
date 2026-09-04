@@ -217,6 +217,41 @@ Put anything you had to assume, or that the organisation must decide, in
 open_questions. That list is the most useful part of the draft.
 """
 
+_CONSISTENCY_SWEEP = """\
+TASK: find places where these records disagree with each other.
+
+You have been given one control and every record in the management system that leans on
+it: the control library entry, the tests performed against it, the risks that claim it
+reduces them, the Statement of Applicability entries it supports, any GDPR processing
+record naming it as a safeguard, any business impact analysis relying on it, findings
+raised against it, and the evidence held for it.
+
+They were all written by people, at different times, and they are supposed to describe
+the same reality. Your job is to find where they no longer do.
+
+The disagreements worth reporting look like this:
+
+  - a test concluded the control does not work, and another record still describes it
+    as protecting something;
+  - a risk claims a reduction from this control on a basis the control library does not
+    support;
+  - a Statement of Applicability entry says implemented while a test says otherwise;
+  - a processing record lists it as a security measure that a test found ineffective;
+  - a recovery plan depends on it while a finding against it is still open;
+  - dates that cannot both be true.
+
+For each one, cite the record references involved -- exactly as they appear in the data,
+such as TEST-008 or ROPA-003. Cite only references that appear in the records you were
+given. Say what disagrees, why it matters, and the single question you would put to the
+analyst. Do not say which record is correct: often neither is, because the world moved
+and only one record was updated.
+
+If the records agree, say so. Put what you checked and found consistent in
+consistent_aspects, and return an empty contradictions list. A clean sweep is a useful
+result and inventing a disagreement to fill the space is not.
+"""
+
+
 FEATURE_INSTRUCTIONS: dict[str, str] = {
     "RISK_ASSIST": _RISK_ASSIST,
     "RISK_DESCRIPTION": _RISK_DESCRIPTION,
@@ -225,6 +260,7 @@ FEATURE_INSTRUCTIONS: dict[str, str] = {
     "FINDING_DRAFT": _FINDING_DRAFT,
     "REMEDIATION_ASSIST": _REMEDIATION,
     "POLICY_DRAFT": _POLICY_DRAFT,
+    "CONSISTENCY_SWEEP": _CONSISTENCY_SWEEP,
 }
 
 

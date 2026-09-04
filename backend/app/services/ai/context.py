@@ -19,16 +19,28 @@ shape carries the list of what was included — which is what the UI renders und
 """
 
 from dataclasses import dataclass, field
+from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.audit import AuditFinding, ControlTest, ControlTestEvidenceLink
 from app.models.framework import Framework, FrameworkControl
+from app.models.privacy import (
+    BiaControlLink,
+    BusinessImpactAnalysis,
+    RopaControlLink,
+    RopaEntry,
+)
 from app.models.risk import Control, ControlAnnexALink, Risk, RiskAppetiteThreshold, RiskControl
-from app.models.soa import RemediationItem, SoAEntry
+from app.models.soa import Evidence, RemediationItem, SoAControlLink, SoAEntry
 from app.services.ai.guardrails import fence, neutralise, scrub
 from app.services.ai.provider import AiError
+from app.services.control_testing import (
+    DesignEffectiveness,
+    OperatingEffectiveness,
+    TestConclusion,
+)
 from app.services.risk_scoring import CATEGORY_LABELS
 
 # The seeded ISO/IEC 27001:2022 framework row. Named here rather than imported from
@@ -551,6 +563,350 @@ def remediation_context(db: Session, finding_ref: str) -> RecordContext:
         ],
         sections=sections,
     )
+
+
+# --- Consistency sweep ----------------------------------------------------------
+#
+# One control, and every record in the management system that leans on it.
+#
+# This is the context that makes the sweep possible, and it is why the sweep is scoped
+# to a control rather than run over the whole database. A contradiction in an ISMS is
+# almost always the same fact recorded in several places and updated in only one: a
+# control test downgrades a control, and the processing record that named it as a
+# safeguard still says it protects people. The records that can disagree about a control
+# are exactly the records that reference it, so those are the ones assembled here.
+
+
+def load_control(db: Session, control_id: str) -> Control:
+    control = db.scalar(
+        select(Control)
+        .options(selectinload(Control.annex_a_links).selectinload(ControlAnnexALink.framework_control))
+        .where(Control.control_id == control_id.strip().upper())
+    )
+    if control is None:
+        raise ContextNotFound(f"Unknown control '{control_id}'")
+    return control
+
+
+def consistency_context(db: Session, control_id: str) -> tuple[RecordContext, set[str]]:
+    """Every record that references one control, rendered side by side.
+
+    Returns the context and the set of record references that were actually supplied.
+    The model is asked to cite the records it thinks disagree, and citing a record it
+    was never shown is the same class of error as inventing an Annex A identifier --
+    checked afterwards against this set rather than trusted.
+    """
+    control = load_control(db, control_id)
+
+    library = _kv(
+        [
+            ("Control", f"{control.control_id} — {control.title}"),
+            ("Description", control.description),
+            ("Family", control.control_family),
+            ("Owner role", control.owner_role),
+            ("Annex A references", ", ".join(control.annex_a_refs) or "none recorded"),
+            ("Design effectiveness", control.design_effectiveness.value),
+            ("Operating effectiveness", control.operating_effectiveness.value),
+            ("Effectiveness note", control.effectiveness_note),
+            ("Last tested", control.last_tested),
+        ]
+    )
+
+    refs: set[str] = {control.control_id}
+    sections: dict[str, str] = {"the control, as the control library records it": library}
+
+    tests = db.scalars(
+        select(ControlTest)
+        .where(ControlTest.control_id == control.id)
+        .order_by(ControlTest.test_ref)
+    ).all()
+    if tests:
+        refs.update(test.test_ref for test in tests)
+        sections["control tests performed against it"] = "\n\n".join(
+            _kv(
+                [
+                    ("Test", test.test_ref),
+                    ("Date", test.test_date),
+                    ("Period covered", f"{test.period_covered_start} to {test.period_covered_end}"),
+                    ("Population and sample", f"{test.sample_size} of {test.population_size}"),
+                    ("Exceptions", test.exceptions_count),
+                    ("Exception detail", test.exception_details),
+                    ("Conclusion", test.conclusion.value),
+                    ("Results summary", test.results_summary),
+                ]
+            )
+            for test in tests
+        )
+
+    risk_links = db.scalars(
+        select(RiskControl)
+        .options(selectinload(RiskControl.risk))
+        .where(RiskControl.control_id == control.id)
+    ).all()
+    if risk_links:
+        refs.update(link.risk.risk_ref for link in risk_links)
+        sections["risks that claim this control reduces them"] = "\n\n".join(
+            _kv(
+                [
+                    ("Risk", f"{link.risk.risk_ref} — {link.risk.title}"),
+                    ("Effectiveness basis claimed on this link", link.effectiveness_basis.value),
+                    ("May be credited with a reduction", "yes" if link.credits_reduction else "no"),
+                    (
+                        "Inherent then residual",
+                        f"{link.risk.inherent_score} then {link.risk.residual_score}",
+                    ),
+                    ("Residual justification", link.risk.residual_justification),
+                    ("Note on the link", link.note),
+                ]
+            )
+            for link in sorted(risk_links, key=lambda item: item.risk.risk_ref)
+        )
+
+    soa_entries = db.scalars(
+        select(SoAEntry)
+        .join(SoAControlLink, SoAControlLink.soa_entry_id == SoAEntry.id)
+        .where(SoAControlLink.control_id == control.id)
+        .order_by(SoAEntry.control_ref)
+    ).all()
+    if soa_entries:
+        refs.update(entry.control_ref for entry in soa_entries)
+        sections["statement of applicability entries this control supports"] = "\n\n".join(
+            _kv(
+                [
+                    ("Annex A control", f"{entry.control_ref} — {entry.control_title}"),
+                    ("Applicable", "yes" if entry.applicable else "no"),
+                    ("Implementation status", entry.implementation_status.value),
+                    ("Implementation description", entry.implementation_description),
+                    ("Inclusion justification", entry.justification_inclusion),
+                ]
+            )
+            for entry in soa_entries
+        )
+
+    ropa = db.scalars(
+        select(RopaEntry)
+        .join(RopaControlLink, RopaControlLink.ropa_id == RopaEntry.id)
+        .where(RopaControlLink.control_id == control.id)
+        .order_by(RopaEntry.ropa_ref)
+    ).all()
+    if ropa:
+        refs.update(entry.ropa_ref for entry in ropa)
+        sections["gdpr processing records naming it as a security measure"] = "\n\n".join(
+            _kv(
+                [
+                    ("Processing record", f"{entry.ropa_ref} — {entry.processing_activity}"),
+                    ("Lawful basis", entry.lawful_basis),
+                    ("Security measures recorded", entry.security_measures_summary),
+                    (
+                        "Legitimate interests assessment",
+                        entry.legitimate_interests_assessment,
+                    ),
+                ]
+            )
+            for entry in ropa
+        )
+
+    bia = db.scalars(
+        select(BusinessImpactAnalysis)
+        .join(BiaControlLink, BiaControlLink.bia_id == BusinessImpactAnalysis.id)
+        .where(BiaControlLink.control_id == control.id)
+        .order_by(BusinessImpactAnalysis.bia_ref)
+    ).all()
+    if bia:
+        refs.update(entry.bia_ref for entry in bia)
+        sections["business impact analyses relying on it for recovery"] = "\n\n".join(
+            _kv(
+                [
+                    ("Process", f"{entry.bia_ref} — {entry.process_name}"),
+                    ("Recovery time objective (hours)", entry.rto_hours),
+                    ("Maximum tolerable outage (hours)", entry.mtpd_hours),
+                    ("Recovery note", entry.recovery_note),
+                ]
+            )
+            for entry in bia
+        )
+
+    findings = db.scalars(
+        select(AuditFinding)
+        .where(AuditFinding.control_id == control.id)
+        .order_by(AuditFinding.finding_ref)
+    ).all()
+    if findings:
+        refs.update(finding.finding_ref for finding in findings)
+        sections["audit findings raised against it"] = "\n\n".join(
+            _kv(
+                [
+                    ("Finding", finding.finding_ref),
+                    ("Title", finding.title),
+                    ("Description", finding.description),
+                    ("Status", finding.status.value),
+                    ("Closed", finding.closed_date),
+                ]
+            )
+            for finding in findings
+        )
+
+    evidence = db.scalars(
+        select(Evidence)
+        .where(Evidence.control_id == control.id)
+        .order_by(Evidence.evidence_ref)
+    ).all()
+    if evidence:
+        refs.update(item.evidence_ref for item in evidence)
+        sections["evidence held for it"] = "\n\n".join(
+            _kv(
+                [
+                    ("Evidence", item.evidence_ref),
+                    ("Title", item.title),
+                    ("Description", item.description),
+                    ("Valid until", item.valid_until),
+                ]
+            )
+            for item in evidence
+        )
+
+    items = [
+        ContextItem("Control", f"{control.control_id} — {control.title}"),
+        ContextItem(
+            "Library rating",
+            f"design {control.design_effectiveness.value}, "
+            f"operating {control.operating_effectiveness.value}",
+        ),
+        ContextItem("Records compared", f"{len(refs)} across {len(sections)} record types"),
+        ContextItem("References supplied", ", ".join(sorted(refs))),
+    ]
+
+    return (
+        RecordContext(
+            entity_type="CONTROL",
+            entity_ref=control.control_id,
+            headline=f"{control.control_id} — {control.title}",
+            items=items,
+            sections=sections,
+        ),
+        refs,
+    )
+
+
+@dataclass(frozen=True)
+class SweepCandidate:
+    """A control worth asking about, and why.
+
+    Chosen by rules, not by the model. This is the half of the feature that costs
+    nothing: a plain query knows which controls are referenced by several parts of the
+    management system *and* carry some tension -- a failed test, an open finding, an
+    expired piece of evidence, a risk claiming more assurance than the library supports.
+    Those are the places a contradiction can exist at all.
+
+    The model is expensive and slow, so it is pointed at a short queue rather than run
+    over the whole database. Rules decide where to look; the model does the reading.
+    """
+
+    control_id: str
+    title: str
+    record_count: int
+    record_types: list[str]
+    reasons: list[str]
+
+
+def sweep_candidates(db: Session) -> list[SweepCandidate]:
+    """Rank controls by how likely their records are to disagree."""
+    controls = db.scalars(select(Control).order_by(Control.control_id)).all()
+
+    tests = db.scalars(select(ControlTest)).all()
+    risk_links = db.scalars(
+        select(RiskControl).options(selectinload(RiskControl.control), selectinload(RiskControl.risk))
+    ).all()
+    soa_links = db.scalars(select(SoAControlLink)).all()
+    ropa_links = db.scalars(select(RopaControlLink)).all()
+    bia_links = db.scalars(select(BiaControlLink)).all()
+    findings = db.scalars(select(AuditFinding)).all()
+    evidence = db.scalars(select(Evidence)).all()
+    today = date.today()
+
+    candidates: list[SweepCandidate] = []
+    for control in controls:
+        own_tests = [t for t in tests if t.control_id == control.id]
+        own_risks = [link for link in risk_links if link.control_id == control.id]
+        own_soa = [link for link in soa_links if link.control_id == control.id]
+        own_ropa = [link for link in ropa_links if link.control_id == control.id]
+        own_bia = [link for link in bia_links if link.control_id == control.id]
+        own_findings = [f for f in findings if f.control_id == control.id]
+        own_evidence = [e for e in evidence if e.control_id == control.id]
+
+        types = [
+            name
+            for name, rows in (
+                ("control tests", own_tests),
+                ("risks", own_risks),
+                ("SoA entries", own_soa),
+                ("GDPR processing records", own_ropa),
+                ("business impact analyses", own_bia),
+                ("audit findings", own_findings),
+                ("evidence", own_evidence),
+            )
+            if rows
+        ]
+        # One record type cannot disagree with itself about anything interesting.
+        if len(types) < 2:
+            continue
+
+        reasons: list[str] = []
+        if control.operating_effectiveness == OperatingEffectiveness.INEFFECTIVE:
+            reasons.append(
+                "The control library rates this control ineffective, so any record still "
+                "describing it as protecting something is worth reading again."
+            )
+        elif control.operating_effectiveness == OperatingEffectiveness.EFFECTIVE_WITH_EXCEPTIONS:
+            reasons.append(
+                "The control operates with exceptions, which records written before the "
+                "test may not reflect."
+            )
+        elif control.operating_effectiveness == OperatingEffectiveness.NOT_TESTED:
+            reasons.append(
+                "The control has never been tested, so nothing downstream can rest on a "
+                "tested basis."
+            )
+        if control.design_effectiveness == DesignEffectiveness.DEFICIENT:
+            reasons.append("The control's design is recorded as deficient.")
+        if any(t.conclusion != TestConclusion.PASS for t in own_tests):
+            reasons.append("At least one test against it did not conclude a clean pass.")
+        if any(f.is_open for f in own_findings):
+            reasons.append("An audit finding against it is still open.")
+        if any(link.basis_is_optimistic for link in own_risks):
+            reasons.append(
+                "A risk claims more assurance from it than the control library supports."
+            )
+        if any(item.is_expired(today) for item in own_evidence):
+            reasons.append("Evidence held for it has passed its validity date.")
+        if own_ropa:
+            reasons.append(
+                "It is named as a security measure in a GDPR processing record, which is "
+                "a claim to a data subject and not only an internal note."
+            )
+
+        if not reasons:
+            continue
+
+        candidates.append(
+            SweepCandidate(
+                control_id=control.control_id,
+                title=control.title,
+                record_count=sum(
+                    len(rows)
+                    for rows in (
+                        own_tests, own_risks, own_soa, own_ropa, own_bia, own_findings, own_evidence
+                    )
+                ),
+                record_types=types,
+                reasons=reasons,
+            )
+        )
+
+    # Most tension first, then most connected, then stable by identifier.
+    candidates.sort(key=lambda c: (-len(c.reasons), -len(c.record_types), c.control_id))
+    return candidates
+
 
 
 # --- Policy drafting -----------------------------------------------------------

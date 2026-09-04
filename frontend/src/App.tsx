@@ -5,6 +5,7 @@ import { api } from './api'
 import { useAuth } from './auth'
 import { useAsync } from './useAsync'
 import { Appetite } from './pages/Appetite'
+import { Consistency } from './pages/Consistency'
 import { ControlLibrary } from './pages/ControlLibrary'
 import { Dashboard } from './pages/Dashboard'
 import { Executive } from './pages/Executive'
@@ -57,6 +58,7 @@ export function App() {
           <NavLink to="/testing">Testing</NavLink>
           <NavLink to="/isms">ISMS</NavLink>
           <NavLink to="/registers">Registers</NavLink>
+          <NavLink to="/consistency">Consistency</NavLink>
           <NavLink to="/appetite">Appetite</NavLink>
           <NavLink to="/frameworks">Frameworks</NavLink>
           <NavLink to="/reports">Reports</NavLink>
@@ -83,6 +85,7 @@ export function App() {
           <Route path="/testing" element={<Testing />} />
           <Route path="/isms" element={<ISMS />} />
           <Route path="/registers" element={<Registers />} />
+          <Route path="/consistency" element={<Consistency />} />
           <Route path="/appetite" element={<Appetite />} />
           <Route path="/frameworks" element={<Frameworks />} />
           <Route path="/controls" element={<ControlLibrary />} />

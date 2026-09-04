@@ -8,6 +8,10 @@ node_modules/
 dist/
 .vite/
 *.tsbuildinfo
+# Local SQLite database, built by `alembic upgrade head` + `python -m app.seed.run_seed`.
+# Generated data, not source: the seed loader is the source of truth for what is in it.
+*.db
+*.db-journal
 .DS_Store
 
 # Editor and tooling config

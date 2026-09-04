@@ -296,6 +296,17 @@ def main() -> int:
                 f"status {status}",
             )
 
+        # The sweep queue is rules only. It must answer whether or not Ollama is up,
+        # because the half of that feature that costs nothing should never be the half
+        # that breaks.
+        status, queue = request(base, "/ai/consistency-candidates", token=auditor)
+        if check("consistency queue resolves without a model", status == 200, f"status {status}"):
+            check("queue is not empty", len(queue) > 0)
+            check(
+                "every queued control touches more than one record type",
+                all(len(row["record_types"]) >= 2 for row in queue),
+            )
+
         # The claim the whole feature rests on, checked against a live instance.
         after = request(base, "/risks/RISK-004", token=auditor)[1]
         check("RISK-004 is unchanged by the assistant", before == after)

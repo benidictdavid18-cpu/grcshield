@@ -1983,3 +1983,101 @@ button.card-link {
 .finding-card .ai-panel {
   margin-top: 1rem;
 }
+
+/* --- Consistency sweep ------------------------------------------------------- */
+
+.sweep-queue {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.sweep-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+}
+
+.sweep-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.sweep-head h3 {
+  font-size: 0.95rem;
+  margin: 0 0 0.3rem;
+}
+
+.sweep-head button {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  flex: none;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.9rem;
+}
+
+.sweep-head button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.sweep-head button:disabled {
+  cursor: progress;
+  opacity: 0.5;
+}
+
+/* Why the rules put this control in the queue. Amber, because it is tension, not
+   a finding -- nothing here has been confirmed by anyone yet. */
+.sweep-reasons {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+}
+
+.sweep-reasons li {
+  border-left: 2px solid var(--out);
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-bottom: 0.35rem;
+  padding-left: 0.7rem;
+}
+
+.sweep-result {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+}
+
+.sweep-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.sweep-list li {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.9rem;
+}
+
+.sweep-list li:last-child {
+  border-bottom: 0;
+}
+
+.sweep-list p {
+  margin: 0.4rem 0 0;
+}
+
+/* The question is the output that matters. The assistant raises it; a person settles
+   it. Styled as the emphasis of the card for that reason. */
+.sweep-question {
+  border-left: 2px solid var(--accent);
+  color: var(--text);
+  padding-left: 0.7rem;
+}

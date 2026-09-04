@@ -133,7 +133,7 @@ validation — 403, not 422.
 
 ## Smoke test
 
-`scripts/smoke_test.py` runs 62 checks against a live instance — 66 when Ollama is
+`scripts/smoke_test.py` runs 65 checks against a live instance — 69 when Ollama is
 running, the extra four being the ones that exercise the assistant — and exits non-zero
 on the first failure, so it is usable as a deployment gate. It verifies the service is seeded,
 that unauthenticated and forged-token reads are refused, that read-only really is

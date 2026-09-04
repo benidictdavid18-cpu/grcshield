@@ -43,6 +43,8 @@ from app.models.soa import SoAEntry
 from app.models.user import User
 from app.schemas.ai import (
     AiEnvelope,
+    ConsistencySweepIn,
+    ConsistencySweepOut,
     AiInteractionOut,
     AiInteractionSummaryOut,
     AiStatusOut,
@@ -62,6 +64,7 @@ from app.schemas.ai import (
     RiskAssistOut,
     RiskDescriptionIn,
     RiskDescriptionOut,
+    SweepCandidateOut,
 )
 from app.services.ai import context as ai_context
 from app.services.ai.provider import (
@@ -70,6 +73,7 @@ from app.services.ai.provider import (
     InvalidAiResponse,
 )
 from app.services.ai.response import (
+    ConsistencySweepSuggestion,
     ControlMappingSuggestion,
     ControlTestSuggestion,
     FindingDraftSuggestion,
@@ -85,6 +89,7 @@ from app.services.ai.service import (
     AIService,
     AiResult,
     check_control_refs,
+    check_record_refs,
     get_ai_service,
     normalise_control_ref,
 )
@@ -527,6 +532,94 @@ def policy_draft(
         entity_type=record.entity_type,
         entity_ref=record.entity_ref,
         suggestion=result.suggestion,
+    )
+
+
+# --- Consistency sweep ------------------------------------------------------------
+
+
+@router.get("/consistency-candidates", response_model=list[SweepCandidateOut])
+def consistency_candidates(db: Session = Depends(get_db)) -> list[SweepCandidateOut]:
+    """Which controls are worth sweeping, and why. No model involved.
+
+    This is the half of the feature that costs nothing. A plain query knows which
+    controls are referenced from several parts of the management system *and* carry some
+    tension -- a failed test, an open finding, expired evidence, a risk claiming more
+    assurance than the library supports. Those are the only places a contradiction can
+    exist at all.
+
+    Rules decide where to look; the model does the reading. That order matters: a model
+    run over the whole database would be slow, expensive and mostly confirming that
+    unrelated records are unrelated.
+    """
+    return [
+        SweepCandidateOut(
+            control_id=candidate.control_id,
+            title=candidate.title,
+            record_count=candidate.record_count,
+            record_types=candidate.record_types,
+            reasons=candidate.reasons,
+        )
+        for candidate in ai_context.sweep_candidates(db)
+    ]
+
+
+@router.post("/consistency-sweep", response_model=ConsistencySweepOut)
+def consistency_sweep(
+    payload: ConsistencySweepIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+    service: AIService = Depends(get_ai_service),
+) -> ConsistencySweepOut:
+    """Read every record that leans on one control and report where they disagree.
+
+    This is the assistant used as a reviewer rather than a writer, and it is the use a
+    language model is actually good at. Reading a dozen records written by different
+    people at different times and noticing that two of them can no longer both be true
+    is comprehension work; no validation rule can generalise it, because the rule would
+    have to be written once per pair of record types.
+
+    It fits the "cannot decide" constraint exactly, rather than despite it. A reviewer's
+    job is to raise the question. Which record is right -- and often neither is, because
+    the world moved and only one was updated -- is the analyst's call.
+
+    Every reference the model cites is checked back against the references it was
+    actually shown. An invented disagreement between two real-sounding record numbers is
+    the worst output this feature could produce, so it is named when it happens.
+    """
+    try:
+        record, supplied = ai_context.consistency_context(db, payload.control_id)
+    except ai_context.ContextNotFound as exc:
+        raise _not_found(exc)
+
+    result = _run(
+        service,
+        db,
+        user,
+        feature=AiFeature.CONSISTENCY_SWEEP,
+        record_context=record,
+        response_type=ConsistencySweepSuggestion,
+        question=payload.question,
+    )
+
+    suggestion: ConsistencySweepSuggestion = result.suggestion  # type: ignore[assignment]
+    uncited: list[str] = []
+    cleaned = []
+    for item in suggestion.contradictions:
+        known, rejected = check_record_refs(item.records, supplied)
+        uncited.extend(rejected)
+        # A contradiction that cites nothing real is not a contradiction anybody can go
+        # and check, so it is dropped rather than shown with an empty citation.
+        if known:
+            cleaned.append(item.model_copy(update={"records": known}))
+
+    return ConsistencySweepOut(
+        **_envelope(result),
+        entity_type=record.entity_type,
+        entity_ref=record.entity_ref,
+        suggestion=suggestion.model_copy(update={"contradictions": cleaned}),
+        uncited_records=sorted(set(uncited)),
+        records_compared=sorted(supplied),
     )
 
 
