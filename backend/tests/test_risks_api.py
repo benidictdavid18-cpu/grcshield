@@ -58,28 +58,49 @@ def test_untested_controls_are_flagged_and_earn_no_reduction(client):
     assert all(c["effectiveness_basis"] == "NOT_TESTED" for c in risk["controls"])
 
 
-def test_five_justifications_are_left_for_the_author(client):
+def test_no_residual_justification_is_left_unwritten(client):
+    """Every one of the twenty is written.
+
+    This test used to assert the opposite -- that five were deliberately blank. The
+    marker mechanism is still in place and still enforced by the API, the reports and
+    the UI; there is simply nothing carrying it any more.
+    """
     outstanding = [r for r in client.get("/risks").json() if r["justification_outstanding"]]
-    assert {r["risk_ref"] for r in outstanding} == {
-        "RISK-002", "RISK-007", "RISK-011", "RISK-014", "RISK-018",
-    }
-    for risk_ref in sorted(r["risk_ref"] for r in outstanding):
-        detail = client.get(f"/risks/{risk_ref}").json()
-        assert TODO_MARKER in detail["residual_justification"]
-
-
-def test_every_completed_justification_is_substantive(client):
+    assert outstanding == []
     for summary in client.get("/risks").json():
-        if summary["justification_outstanding"]:
-            continue
+        detail = client.get(f"/risks/{summary['risk_ref']}").json()
+        assert TODO_MARKER not in detail["residual_justification"]
+
+
+def test_every_justification_is_substantive(client):
+    for summary in client.get("/risks").json():
         detail = client.get(f"/risks/{summary['risk_ref']}").json()
         assert len(detail["residual_justification"].split()) >= 25
+
+
+def test_every_justification_names_a_control_actually_linked_to_that_risk(client):
+    """The check that makes a justification reviewable rather than merely present.
+
+    Clause-free prose that never names a control cannot be argued with. A justification
+    that names AC-003 can be checked against AC-003's test, and disagreed with.
+
+    RISK-019 is the exception the rule needs: none of its controls may be credited, so
+    its justification explains why *no* reduction is claimed rather than attributing one.
+    A justification that named a control there would be claiming something the register
+    refuses to record.
+    """
+    for summary in client.get("/risks").json():
+        detail = client.get(f"/risks/{summary['risk_ref']}").json()
+        text = detail["residual_justification"]
+        linked = {control["control_id"] for control in detail["controls"]}
+        if detail["residual"]["score"] < detail["inherent"]["score"]:
+            assert any(control_id in text for control_id in linked), detail["risk_ref"]
 
 
 def test_register_summary_counts_breaches_and_outstanding_work(client):
     summary = client.get("/risks/summary").json()
     assert summary["total"] == 20
-    assert summary["justifications_outstanding"] == 5
+    assert summary["justifications_outstanding"] == 0
     # Seven. Two of them arrived the same way: TEST-008 rated DP-005 ineffective,
     # which withdrew the reduction RISK-008 was carrying, and forced RISK-018 back to
     # its inherent level once its only preventive control was gone.

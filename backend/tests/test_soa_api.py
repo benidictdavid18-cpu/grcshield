@@ -3,7 +3,9 @@
 EXCLUDED_REFS = {
     "A.7.1", "A.7.2", "A.7.3", "A.7.4", "A.7.5", "A.7.6", "A.7.11", "A.7.12", "A.8.30",
 }
-AUTHOR_TODO_REFS = {
+# The eight written last: the ones whose driver was a judgment call rather than an
+# obvious single risk.
+AUTHORED_REFS = {
     "A.5.7", "A.5.15", "A.5.23", "A.6.3", "A.8.5", "A.8.12", "A.8.16", "A.8.28",
 }
 
@@ -79,14 +81,44 @@ def test_every_gap_carries_remediation_with_an_owner_and_a_due_date(client):
             assert item["due_date"]
 
 
-def test_eight_inclusion_justifications_are_left_for_the_author(client):
+def test_no_inclusion_justification_is_left_unwritten(client):
     outstanding = [e for e in client.get("/soa").json() if e["justification_outstanding"]]
-    assert {e["control_ref"] for e in outstanding} == AUTHOR_TODO_REFS
-    for ref in sorted(AUTHOR_TODO_REFS):
+    assert outstanding == []
+
+
+def test_every_inclusion_justification_names_a_driver(client):
+    """Clause 6.1.3 d) asks why a control is *necessary*.
+
+    ``soa_validation`` already refuses a justification that names no driver at all. This
+    goes further and checks the stronger property: that the driver named is one this
+    database actually holds -- a risk reference that exists, or a stated legal,
+    regulatory or contractual obligation -- rather than prose that merely reads well.
+    """
+    for summary in client.get("/soa").json():
+        if not summary["applicable"]:
+            continue
+        entry = client.get(f"/soa/{summary['control_ref']}").json()
+        text = entry["justification_inclusion"]
+        assert text and "TODO AUTHOR:BENNY" not in text
+        # A floor against a stub, not a quality bar. A.5.16 says what it needs to in
+        # thirteen words and is better for it; length is not the property being tested.
+        assert len(text.split()) >= 10, summary["control_ref"]
+
+        linked = {risk["risk_ref"] for risk in entry["risks"]}
+        names_a_linked_risk = any(risk_ref in text for risk_ref in linked)
+        names_an_obligation = any(
+            term in text.lower()
+            for term in ("gdpr", "article", "contract", "regulat", "legal", "law", "pci")
+        )
+        assert names_a_linked_risk or names_an_obligation, summary["control_ref"]
+
+
+def test_the_eight_authored_justifications_are_the_longest_form(client):
+    """The eight that were written last are the ones an auditor is most likely to open,
+    so they carry the fullest reasoning rather than a single sentence."""
+    for ref in sorted(AUTHORED_REFS):
         entry = client.get(f"/soa/{ref}").json()
-        assert "TODO AUTHOR:BENNY" in entry["justification_inclusion"]
-        # Each placeholder carries a hint about what must be decided.
-        assert len(entry["justification_inclusion"].split()) >= 15
+        assert len(entry["justification_inclusion"].split()) >= 60, ref
 
 
 def test_a_8_5_carries_the_full_traceability_chain(client):

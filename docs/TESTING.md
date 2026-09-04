@@ -63,10 +63,16 @@ results, exceptions, conclusion and reviewer.
   been reviewed, and preparer/reviewer segregation is one of the few segregation controls
   a 40-person company can still operate.
 
-Four sampling rationales are left as `TODO AUTHOR:BENNY`: **TEST-003, TEST-005, TEST-008
-and TEST-011**. Each hint names the specific judgment to defend — TEST-011's asks why the
-sample was weighted toward critical severity when every exception turned out to be in
-medium.
+Every sampling rationale is written. Four were held back until last — **TEST-003,
+TEST-005, TEST-008 and TEST-011** — because each defends a choice rather than describing
+one.
+
+TEST-011 is the uncomfortable one. The sample was weighted toward critical and high
+severity, and all three exceptions turned out to be in medium, the band deliberately
+under-sampled. The rationale argues the weighting was still right, and then concedes what
+follows from it: the test can say the tightest SLAs hold, and it cannot estimate the
+medium exception rate at all. Three exceptions in 24 sampled from 403 supports no
+projection. The honest next step is a separate test, not a re-reading of this one.
 
 ## The cascade
 

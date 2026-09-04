@@ -225,10 +225,14 @@ accuracy the bands exist to remove.
 
 ## Current state
 
-Five of the twenty residual justifications are deliberately unwritten, marked
-`TODO AUTHOR:BENNY`: RISK-002, RISK-007, RISK-011, RISK-014 and RISK-018. They are the
-author's to write and are flagged in both the API and the UI rather than filled with
-plausible-sounding text.
+All twenty residual justifications are written. Five of them — RISK-002, RISK-007,
+RISK-011, RISK-014 and RISK-018 — were held back deliberately until last, because each
+required a judgment the data alone does not settle: which of several tested controls
+actually moved the likelihood, and which only shortened detection.
+
+The marker mechanism remains in place and is still enforced by the API, the reports and
+the UI. Nothing carries it now, and a justification added without one would be caught by
+`test_no_residual_justification_is_left_unwritten`.
 
 **Seven** risks currently sit above their category appetite: RISK-002, RISK-004,
 RISK-008, RISK-009, RISK-010, RISK-018 and RISK-019.
@@ -283,12 +287,18 @@ reasoning; they are not measurements of anything.
 weekly loss figures. They are plausible orders of magnitude for a company of this
 described size, and nothing more.
 
-**Some judgments are deliberately unmade.** Roughly 25 fields carry the literal marker
-`TODO AUTHOR:BENNY`: five residual justifications, eight SoA inclusion justifications,
-four sampling rationales, and the decision records in
-[DECISIONS.md](DECISIONS.md). These are left blank on purpose rather than filled with
-plausible text, because a justification the author cannot defend in conversation is worse
-than an obvious gap. Both the API and the UI flag them.
+**The judgments are made, and they are arguable.** Twenty-five fields were held back
+until last — five residual justifications, eight SoA inclusion justifications, four
+sampling rationales, and the closing section of each decision record — because each
+needed a decision the surrounding data does not make on its own. They are now written,
+and several take a position that a reasonable assessor would push on: that A.8.12 data
+loss prevention stays applicable at forty people, that deterrence earns no credit on
+RISK-018, that PCI DSS is *not* the driver for A.5.15 because FinFlow handles no
+cardholder data.
+
+The marker mechanism is still enforced end to end — API, PDF reports and UI — and is
+still the right design. A field nobody has decided should be visibly undecided rather
+than quietly plausible.
 
 **The tooling is a demonstration, not a product.** There is no multi-tenancy, no audit
 log of user actions, no evidence file storage, no rate limiting, and the demo credentials

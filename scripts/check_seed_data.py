@@ -31,7 +31,12 @@ from app.seed.evidence_register import EVIDENCE  # noqa: E402
 from app.seed.internal_controls import EFFECTIVENESS, INTERNAL_CONTROLS  # noqa: E402
 from app.seed.iso_soc2_mappings import ISO_TO_SOC2  # noqa: E402
 from app.seed.remediation_register import REMEDIATION_ITEMS  # noqa: E402
-from app.seed.risk_register import APPETITE_THRESHOLDS, RISKS, TODO  # noqa: E402
+from app.seed.risk_register import APPETITE_THRESHOLDS, RISKS  # noqa: E402
+
+# The marker the author fields carried while they were outstanding. Nothing holds
+# it now, and these checks assert that -- a justification added without one would
+# be a field somebody skipped.
+TODO = "TODO AUTHOR:BENNY"
 from app.seed.soa_register import SOA_ENTRIES  # noqa: E402
 from app.seed.soc2_tsc import ELECTED_CATEGORIES, TSC_CRITERIA  # noqa: E402
 from app.services.control_testing import (  # noqa: E402
@@ -193,7 +198,7 @@ check(
 )
 
 todo_risks = [r.risk_ref for r in RISKS if TODO in r.residual_justification]
-check(len(todo_risks) == 5, f"Expected 5 author-written justifications outstanding, found {len(todo_risks)}")
+check(not todo_risks, f"Residual justifications still unwritten: {todo_risks}")
 
 breaching: list[str] = []
 for risk in RISKS:
@@ -223,11 +228,10 @@ for risk in RISKS:
             "control is untested or tested ineffective",
         )
 
-    if TODO not in risk.residual_justification:
-        check(
-            len(risk.residual_justification.split()) >= 25,
-            f"{risk.risk_ref} justification is too thin to defend in review",
-        )
+    check(
+        len(risk.residual_justification.split()) >= 25,
+        f"{risk.risk_ref} justification is too thin to defend in review",
+    )
 
     ceiling = appetite.get(risk.category)
     if ceiling and exceeds_appetite(band_for(residual), ceiling.max_acceptable_band):
@@ -282,7 +286,7 @@ check(
 )
 
 soa_todo = sorted(s.ref for s in SOA_ENTRIES if s.inclusion and TODO in s.inclusion)
-check(len(soa_todo) == 8, f"Expected 8 author-written SoA justifications, found {len(soa_todo)}")
+check(not soa_todo, f"SoA inclusion justifications still unwritten: {soa_todo}")
 
 soa_gaps: list[str] = []
 for entry in SOA_ENTRIES:
@@ -292,11 +296,10 @@ for entry in SOA_ENTRIES:
             entry.exclusion is None,
             f"{entry.ref} is applicable but carries an exclusion justification",
         )
-        if TODO not in (entry.inclusion or ""):
-            check(
-                bool(entry.risks) or entry.inclusion is not None,
-                f"{entry.ref} inclusion justification names no driver",
-            )
+        check(
+            bool(entry.risks) or entry.inclusion is not None,
+            f"{entry.ref} inclusion justification names no driver",
+        )
         if entry.status != "IMPLEMENTED":
             soa_gaps.append(entry.ref)
             live = [
@@ -369,7 +372,7 @@ check(len(CONTROL_TESTS) == 12, f"Expected 12 control tests, found {len(CONTROL_
 
 finding_refs = {f.ref for f in AUDIT_FINDINGS}
 test_todo = sorted(t.ref for t in CONTROL_TESTS if TODO in t.sampling_rationale)
-check(len(test_todo) == 4, f"Expected 4 author-written sampling rationales, found {len(test_todo)}")
+check(not test_todo, f"Sampling rationales still unwritten: {test_todo}")
 
 for spec in CONTROL_TESTS:
     check(spec.control_ref in internal_ids, f"{spec.ref} tests unknown control '{spec.control_ref}'")
@@ -398,11 +401,10 @@ for spec in CONTROL_TESTS:
         check(spec.finding_ref in finding_refs, f"{spec.ref} links unknown finding")
     unknown_ev = set(spec.evidence) - evidence_refs
     check(not unknown_ev, f"{spec.ref} links unknown evidence: {sorted(unknown_ev)}")
-    if TODO not in spec.sampling_rationale:
-        check(
-            len(spec.sampling_rationale.split()) >= 20,
-            f"{spec.ref} sampling rationale is too thin to defend",
-        )
+    check(
+        len(spec.sampling_rationale.split()) >= 20,
+        f"{spec.ref} sampling rationale is too thin to defend",
+    )
 
 # The control library rating must match the worst outstanding test on that control.
 tests_by_control: dict[str, list] = {}
@@ -557,15 +559,15 @@ print(f"Internal controls     : {len(INTERNAL_CONTROLS)}")
 print(f"Appetite thresholds   : {len(APPETITE_THRESHOLDS)}")
 print(f"Risks                 : {len(RISKS)}")
 print(f"Above appetite        : {len(breaching)}  {breaching}")
-print(f"Risk justifications TODO: {len(todo_risks)}  {todo_risks}")
+print(f"Risk justifications unwritten : {len(todo_risks)}")
 print(f"Evidence artifacts    : {len(EVIDENCE)}  ({len(expired_evidence)} expired: {expired_evidence})")
 print(f"Remediation items     : {len(REMEDIATION_ITEMS)}  ({len(open_remediation)} open, {len(overdue)} overdue: {overdue})")
 print(f"SoA entries           : {len(SOA_ENTRIES)}  ({len(applicable_entries)} applicable, {len(soa_excluded)} excluded)")
 print(f"SoA implemented       : {len(implemented_entries)} of {len(applicable_entries)} applicable = {percent_implemented}%")
 print(f"SoA gaps              : {len(soa_gaps)}")
-print(f"SoA justifications TODO: {len(soa_todo)}  {soa_todo}")
+print(f"SoA justifications unwritten  : {len(soa_todo)}")
 print(f"Control tests         : {len(CONTROL_TESTS)}  {dict(conclusions)}")
-print(f"Test rationales TODO  : {len(test_todo)}  {test_todo}")
+print(f"Test rationales unwritten     : {len(test_todo)}")
 print(f"Audit findings        : {len(AUDIT_FINDINGS)}")
 print(
     f"Design deficient      : "

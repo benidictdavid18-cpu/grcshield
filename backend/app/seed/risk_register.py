@@ -4,7 +4,7 @@ Every residual score here was chosen by hand against FinFlow's profile, not deri
 Read any row as a claim an auditor could challenge: the justification must name which
 control moved which dimension, and why the other dimension did not move.
 
-Five justifications are deliberately left as ``TODO AUTHOR:BENNY`` — RISK-002, 007,
+Five justifications were written last, having been held as ``TODO AUTHOR:BENNY`` — RISK-002, 007,
 011, 014 and 018. Those are the author's to write.
 """
 
@@ -21,7 +21,6 @@ from app.services.risk_scoring import (
     TreatmentDecision,
 )
 
-TODO = "TODO AUTHOR:BENNY"
 
 
 class AppetiteSpec(NamedTuple):
@@ -166,9 +165,23 @@ RISKS: list[RiskSpec] = [
         "fully time-bound.",
         3, 5,
         2, 5,
-        f"{TODO} — name which control moved likelihood 3 to 2 (AC-003 is tested with "
-        "exceptions, so say what the exceptions were), and state why impact remains 5 "
-        "despite DP-001 encryption at rest.",
+        "AC-003 moves likelihood 3 to 2. Standing administrative credentials are no "
+        "longer issued: an engineer assumes a privileged role for a bounded session, so "
+        "the window in which a compromised credential is useful is a session rather than "
+        "indefinite. The reduction is one point rather than two because TEST-004 found "
+        "two exceptions in a sample of forty — two legacy IAM users still hold standing "
+        "programmatic access to production and never pass through role assumption. Their "
+        "activity is logged but not gated, and they are the same access paths TEST-003 "
+        "recorded. AC-004 supports the reduction without earning one of its own: a "
+        "quarterly review removes entitlements that accumulate, but between reviews the "
+        "access is live. "
+        "Impact stays at 5, and DP-001 does not change that. Encryption at rest defends "
+        "against someone obtaining the storage — a snapshot, a disk, a misdirected "
+        "backup. It does not defend against an authenticated engineer reading through "
+        "the application, because for that path the data decrypts transparently and by "
+        "design. The threat here is the credential, not the media, so the control that "
+        "would move impact is minimisation of what a single query can return, and "
+        "FinFlow does not have it.",
         TreatmentDecision.MITIGATE,
         "Time-bound elevation being rolled out; quarterly access review already operating.",
         date(2025, 1, 20), date(2026, 7, 14), date(2026, 10, 14),
@@ -288,9 +301,25 @@ RISKS: list[RiskSpec] = [
         "Single-region deployment; no warm standby in a second region.",
         2, 5,
         2, 4,
-        f"{TODO} — this is the one risk where impact drops rather than likelihood. Explain "
-        "why OP-005 cross-region backups reduce impact from 5 to 4, and why likelihood "
-        "stays at 2 (nothing FinFlow does affects whether AWS loses a region).",
+        "This is the one risk in the register where impact moves and likelihood does not, "
+        "and the asymmetry is the point. "
+        "Likelihood stays at 2 because nothing FinFlow does affects whether AWS loses a "
+        "region. OP-006 is tested effective and is genuinely useful, but multi-AZ "
+        "deployment protects against the loss of an availability zone, which is a "
+        "different event: the scenario scored here is the region going, and every zone "
+        "goes with it. A control that does not touch the cause cannot move the "
+        "likelihood, however well it operates. "
+        "Impact moves 5 to 4 because of OP-005. RDS backups are copied cross-region and "
+        "TEST-012 exercised a restore with no exceptions, so a regional loss is an outage "
+        "FinFlow recovers from rather than an event that ends the data. The distinction "
+        "between 5 and 4 here is survivable-but-severe against unrecoverable. It is not "
+        "lower than 4 because recovery would run well past BIA-001's two-hour objective "
+        "and into the four-hour maximum tolerable outage for payment processing. "
+        "BC-001 is recorded DESIGN_ONLY and is credited with nothing. The plan is "
+        "written and the annual exercise has not been run against this scenario, so it "
+        "is an intention. EXC-002 is where the residual exposure is carried: the CEO "
+        "accepted single-region operation to 2027-06-30, and that acceptance is the "
+        "reason Business Continuity holds the highest appetite in the register.",
         TreatmentDecision.ACCEPT,
         "Single-region operation accepted at current scale; cross-region backup copies in "
         "place. Multi-region active-active is explicitly out of budget.",
@@ -389,9 +418,27 @@ RISKS: list[RiskSpec] = [
         "Large transitive dependency tree; no pinned internal package mirror.",
         3, 4,
         2, 4,
-        f"{TODO} — three controls here are all tested effective (CM-003, CM-004, OP-003). "
-        "Say which of them actually reduces likelihood versus which only shortens detection "
-        "time, and be precise about why impact is unchanged.",
+        "Three controls are linked and all three are tested effective, but they do not do "
+        "the same work and only one of them moves the likelihood. "
+        "OP-003 earns the reduction from 3 to 2. It scans container images and their "
+        "dependencies before deployment, so a package with a known vulnerability is "
+        "stopped at the gate rather than found in production. That is prevention, and it "
+        "acts on the event being scored. "
+        "CM-004 does not reduce likelihood. Dependency alerting fires on something "
+        "already in the tree, which shortens the time between a disclosure and a fix — "
+        "valuable, and it is why the treatment is Mitigate rather than Accept, but it is "
+        "detection after the fact. CM-003 is further away still: static analysis reads "
+        "FinFlow's own code and has nothing to say about a compromised upstream "
+        "maintainer. Neither is credited with the reduction, and the register should not "
+        "imply they were. "
+        "The residual is not lower than 2 because scanning only finds what is already "
+        "known. A package compromised at the maintainer account, before any advisory "
+        "exists, passes every one of these controls cleanly. "
+        "Impact is unchanged at 4. A malicious dependency executes inside the "
+        "application, with the application's credentials and network position, and it "
+        "makes no difference to the blast radius whether it arrived through a scanned "
+        "pipeline or an unscanned one. Nothing linked here constrains what the code can "
+        "reach once it runs.",
         TreatmentDecision.MITIGATE,
         "SAST and dependency alerting in CI; critical findings block merge.",
         date(2025, 10, 27), date(2026, 7, 6), date(2026, 10, 6),
@@ -462,9 +509,24 @@ RISKS: list[RiskSpec] = [
         "achievable uptime.",
         3, 3,
         2, 3,
-        f"{TODO} — OP-006 multi-AZ is tested effective and OP-002 monitoring is tested "
-        "effective. Decide which one justifies the likelihood move from 3 to 2, and note "
-        "why service-credit exposure keeps impact at 3.",
+        "OP-006 justifies the move from 3 to 2, and OP-002 does not. "
+        "The event scored here is accumulated downtime crossing a contractual "
+        "availability threshold, so the control that matters is the one that prevents "
+        "outages accruing. Multi-AZ deployment is tested effective and does exactly "
+        "that: a zone failure stops being an outage at all. OP-002 is also tested "
+        "effective, but monitoring shortens the time to notice and to start recovering. "
+        "It compresses the length of an outage rather than preventing one, and a "
+        "shortened outage still counts against the threshold. Crediting both would be "
+        "counting the same reduction twice. "
+        "The residual is not lower than 2 because the vulnerability recorded here is not "
+        "technical. The SLA commitments were agreed in sales negotiations without an "
+        "engineering review of achievable uptime, so the threshold itself may be set "
+        "below what the architecture can hold. No availability control fixes a number "
+        "that was wrong when it was signed; renegotiation at renewal does. "
+        "Impact stays at 3. Exposure here is service credits, and service credits are "
+        "contractually fixed as a percentage of fees. They do not shrink because the "
+        "outage was detected faster, and no control in this register changes the "
+        "commercial term. The only route to a lower impact runs through the contract.",
         TreatmentDecision.MITIGATE,
         "Multi-AZ deployment and uptime monitoring; SLA terms under review at renewal.",
         date(2025, 12, 9), date(2026, 6, 16), date(2026, 12, 16),
@@ -554,16 +616,31 @@ RISKS: list[RiskSpec] = [
         "Production access is broader than strictly necessary; monitoring is detective only.",
         3, 4,
         3, 4,
-        f"{TODO} — the reduction previously claimed here has been withdrawn, and the "
-        "paragraph needs writing to match. The position taken: no reduction is claimed. "
-        "Four points to make in your own words. (1) The threat statement covers two modes "
-        "— deliberate misuse and curiosity-driven browsing. (2) DP-005 masking was the only "
-        "control addressing the second mode, and TEST-008 rated it INEFFECTIVE. (3) What "
-        "remains either detects after the fact (OP-001) or manages access the engineer "
-        "legitimately holds (AC-003, AC-004); deterrence is not credited, on the same "
-        "reasoning that refuses credit to untested controls — it cannot be evidenced. "
-        "(4) State what would justify a reduction later: REM-017 closing and masking being "
-        "re-tested.",
+        "No reduction is claimed. Residual is scored at inherent, and the register says "
+        "so rather than quietly implying improvement. "
+        "The threat statement covers two modes, and they need different controls. "
+        "Deliberate misuse by someone who already holds legitimate access is one; "
+        "curiosity-driven browsing of production data is the other, and it is the more "
+        "common of the two in practice. "
+        "DP-005 was the only linked control addressing the second mode — if "
+        "non-production data is masked, there is nothing interesting to browse. TEST-008 "
+        "examined all eleven non-production stores and found two holding unmasked "
+        "customer records, and the control is now rated INEFFECTIVE with a deficient "
+        "design. It cannot be credited. "
+        "What remains does not close the gap. OP-001 records what happened and finds it "
+        "afterwards; it does not prevent the access. AC-003 and AC-004 manage access the "
+        "engineer legitimately holds and is expected to use, which is precisely the "
+        "circumstance this risk describes. HR-001 screens people before they arrive and "
+        "says nothing about what they do once inside. "
+        "Deterrence is not credited. It is real — people behave differently when they "
+        "know activity is logged — but it cannot be evidenced, and this register refuses "
+        "credit to untested controls on exactly that reasoning. Crediting an effect I "
+        "cannot measure, while refusing credit to a control I simply have not got round "
+        "to testing, would be inconsistent in the direction that flatters the numbers. "
+        "A reduction becomes defensible when REM-017 closes and masking is re-tested "
+        "against the full population. Until then this risk sits above appetite with no "
+        "live acceptance covering it, which is an uncomfortable place for it to be and "
+        "an accurate one.",
         TreatmentDecision.MITIGATE,
         "Access logging and quarterly review operate, but the only preventive control over "
         "what an engineer can see is broken. Residual returns to inherent and the risk now "

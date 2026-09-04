@@ -9,7 +9,7 @@ transferred to a provider, addressed by a different control, or genuinely absent
 a control that is merely "not applicable" with no onward destination is an unmanaged
 risk with paperwork attached.
 
-Eight inclusion justifications are deliberately left as ``TODO AUTHOR:BENNY`` with a
+Eight inclusion justifications were written last, having been held as a
 one-line hint: A.5.7, A.5.15, A.5.23, A.6.3, A.8.5, A.8.12, A.8.16 and A.8.28. Those
 are the author's to write.
 """
@@ -17,7 +17,6 @@ are the author's to write.
 from datetime import date
 from typing import NamedTuple
 
-TODO = "TODO AUTHOR:BENNY"
 
 ENG = "Head of Engineering"
 LEGAL = "Head of Legal & Compliance"
@@ -112,9 +111,17 @@ SOA_ENTRIES: list[SoASpec] = [
     ),
     SoASpec(
         "A.5.7", True, NOT_IMPL, ENG,
-        f"{TODO} — this control feeds RISK-001 and RISK-011. Say what threat intelligence "
-        "would actually change about FinFlow's decisions, or argue the control is "
-        "disproportionate at this size and downgrade the gap accordingly.",
+        "Necessary for RISK-011, supply chain compromise of an upstream dependency, and "
+        "RISK-001, credential attacks against the customer base. Both are risks where "
+        "FinFlow learns about a technique from outside or does not learn about it at "
+        "all: a maintainer account compromise and a credential-stuffing campaign are "
+        "both visible to the wider community before they are visible here. "
+        "The proportionate version of this control at forty people is not a threat "
+        "intelligence function. It is a named source list, a defined cadence, and a "
+        "route into the risk review so that what is read changes something. FinFlow has "
+        "none of the three, which is why this is recorded as a gap rather than argued "
+        "away as disproportionate — the cost of the proportionate version is an hour a "
+        "month, and that is not a scale argument.",
         None,
         "Threat information is consumed ad hoc by individual engineers with no defined "
         "sources, cadence or route into the risk assessment.",
@@ -185,9 +192,19 @@ SOA_ENTRIES: list[SoASpec] = [
     ),
     SoASpec(
         "A.5.15", True, PARTIAL, ENG,
-        f"{TODO} — this is the parent control for the RISK-004 chain. Decide whether the "
-        "driver you cite is the risk itself or the PCI-DSS and customer contractual "
-        "requirements for least-privilege access, and be specific about which.",
+        "Necessary for RISK-004, compromise of a privileged AWS account, and RISK-002, "
+        "unauthorised access to customer personal data. Those two risks are the driver "
+        "cited, and they are cited deliberately in preference to a compliance "
+        "obligation. "
+        "PCI DSS is not the reason. FinFlow does not store, process or transmit "
+        "cardholder data — the payment service provider does — so PCI DSS requirements "
+        "do not apply directly, and citing them here would be a claim the scope "
+        "statement contradicts. Customer contracts do impose least-privilege and access "
+        "review commitments, and those are real, but they are a secondary driver: they "
+        "would not change what this control has to do, and the risks would demand it "
+        "even with no contract in place. "
+        "The gap is on the privileged path specifically. Policy exists and Okta enforces "
+        "it for the workforce; RISK-004 records where enforcement stops.",
         None,
         "Access control policy is defined and enforced through Okta. Enforcement is "
         "incomplete on privileged AWS paths, which is the gap RISK-004 records.",
@@ -258,9 +275,22 @@ SOA_ENTRIES: list[SoASpec] = [
     ),
     SoASpec(
         "A.5.23", True, IMPL, ENG,
-        f"{TODO} — this control carries the weight of the nine A.7 exclusions. Explain what "
-        "FinFlow retains under the AWS shared responsibility model and what it does not, "
-        "and reference the assurance mechanism you rely on.",
+        "Necessary for RISK-007, extended regional outage, and RISK-012, dependency on a "
+        "single infrastructure provider. It also carries the weight of the nine A.7 "
+        "exclusions, which is the more important reason and the one an auditor will test. "
+        "Under the AWS shared responsibility model FinFlow retains identity and access "
+        "management, network and account configuration, encryption key management, "
+        "operating system and application patching, and the data itself. AWS retains "
+        "physical access to facilities, environmental controls, hardware lifecycle and "
+        "secure media disposal. Every A.7 control excluded from this Statement of "
+        "Applicability is excluded because it falls on the AWS side of that line, and "
+        "this control is what makes the exclusions reviewable rather than convenient. "
+        "The assurance relied on is the AWS SOC 2 Type II report, obtained and reviewed "
+        "through the vendor review process. That reliance is currently weaker than it "
+        "should be: the report on file has passed its validity date, which is recorded "
+        "in the evidence register and is the reason KRI-006 sits amber. An exclusion "
+        "resting on an expired report is an exclusion resting on what was true last "
+        "year.",
         None,
         "Cloud services governed through the vendor review process and AWS account "
         "structure; shared responsibility boundaries documented in the ISMS scope.",
@@ -416,9 +446,21 @@ SOA_ENTRIES: list[SoASpec] = [
     ),
     SoASpec(
         "A.6.3", True, IMPL, PEOPLE,
-        f"{TODO} — RISK-015 is the obvious driver, but training also underpins A.6.8 event "
-        "reporting. Decide whether you cite the phishing risk, the reporting dependency, or "
-        "both, and say why 94% completion is or is not acceptable.",
+        "Necessary for RISK-015, successful phishing of a member of staff, and for "
+        "A.6.8 event reporting, which depends on it. Both are cited, because they need "
+        "different things from the same control and citing only the phishing risk would "
+        "understate what training has to cover. "
+        "Awareness reduces the likelihood that someone clicks. Reporting depends on "
+        "someone who has already clicked being willing to say so quickly, which is a "
+        "cultural outcome of how the training is delivered rather than of its content. "
+        "A programme that produces compliance without candour satisfies this control and "
+        "quietly breaks A.6.8. "
+        "Completion at 94% is not acceptable as a resting state, and the number is "
+        "recorded here rather than rounded because the residual 6% is the population "
+        "that matters. Six per cent of forty people is between two and three "
+        "individuals, and one phished account is sufficient. Outstanding staff are "
+        "escalated to line managers; the control is rated implemented because the "
+        "programme operates as designed, not because coverage is complete.",
         None,
         "Onboarding training within 30 days and annual refresher, currently at 94% "
         "completion with outstanding staff escalated to line managers.",
@@ -625,9 +667,22 @@ SOA_ENTRIES: list[SoASpec] = [
     ),
     SoASpec(
         "A.8.5", True, PARTIAL, ENG,
-        f"{TODO} — this is the control the RISK-004 walkthrough turns on, so write it "
-        "carefully. Cite RISK-004 and state what secure authentication means for the 40% of "
-        "privileged accounts EV-002 shows are not yet covered.",
+        "Necessary for RISK-004, compromise of a privileged AWS account through "
+        "incomplete MFA enforcement, and for RISK-001, customer account takeover. "
+        "RISK-004 is the primary driver and the reason this entry is only partially "
+        "implemented. "
+        "For the workforce, secure authentication means what the control says: a "
+        "phishing-resistant factor enforced through the Okta sign-on policy. For the "
+        "privileged population it means that for nine of fifteen accounts, and for the "
+        "remaining six it means a password. EV-002 is the Okta enrolment export behind "
+        "that figure and TEST-003 examined the full population of fifteen rather than a "
+        "sample, so 60% is a count and not an estimate. "
+        "The six uncovered accounts are the ones that matter most. They reach production "
+        "infrastructure and the customer data in it, and they authenticate on legacy "
+        "paths that bypass the sign-on policy entirely — so the control is not weaker "
+        "for them, it is absent. Recording this entry as implemented because the policy "
+        "exists and most users are covered would be exactly the overstatement the "
+        "Statement of Applicability exists to prevent.",
         None,
         "Phishing-resistant MFA enforced through Okta for all users. Privileged account "
         "coverage stands at 60% (EV-002): nine of fifteen privileged accounts have a "
@@ -693,9 +748,22 @@ SOA_ENTRIES: list[SoASpec] = [
     ),
     SoASpec(
         "A.8.12", True, NOT_IMPL, ENG,
-        f"{TODO} — RISK-018 and RISK-002 are the candidates, but be honest about whether DLP "
-        "is proportionate for a 40-person company or whether A.8.3 and A.8.11 already carry "
-        "the load. If it is disproportionate, say so and justify the gap accordingly.",
+        "Necessary for RISK-018, insider misuse of production data access, and RISK-002, "
+        "unauthorised access to customer personal data. RISK-018 is the primary driver: "
+        "it is currently at its inherent level with no reduction claimed, and it is one "
+        "of the risks above appetite with no live acceptance covering it. "
+        "Full data loss prevention tooling — endpoint agents, mail inspection, egress "
+        "classification — is not proportionate at forty people with no premises and no "
+        "corporate network to place a gateway on. That argument is sound and it is not "
+        "sufficient to exclude the control, because the objective is preventing "
+        "unauthorised extraction, not buying a product. "
+        "The honest position is that A.8.3 restriction of information access and A.8.11 "
+        "data masking were expected to carry this objective between them, and A.8.11 is "
+        "not currently carrying anything: TEST-008 rated DP-005 ineffective across the "
+        "analytics warehouse and the support tooling. So the load-bearing half of the "
+        "compensating argument is broken, and this entry stays applicable and not "
+        "implemented until either masking is re-tested or a proportionate control is "
+        "chosen for the extraction path itself.",
         None,
         "No data loss prevention capability exists on email, endpoints or support tooling.",
         (), ("RISK-018", "RISK-002"), (), ("REM-005",),
@@ -729,9 +797,20 @@ SOA_ENTRIES: list[SoASpec] = [
     ),
     SoASpec(
         "A.8.16", True, IMPL, ENG,
-        f"{TODO} — RISK-004 and RISK-012 both rely on this control, and it also carries the "
-        "A.7.4 exclusion (physical monitoring replaced by logical). Decide whether you cite "
-        "the risks, the exclusion dependency, or both.",
+        "Necessary for RISK-004, privileged account compromise, and RISK-012, provider "
+        "dependency. It also carries the A.7.4 physical monitoring exclusion, and all "
+        "three are cited because the exclusion is the one that would surprise an "
+        "auditor. "
+        "For RISK-004 this is the control that shortens the incident rather than "
+        "preventing it — the compensating control the CTO named when refusing EXC-004, "
+        "and named as detective for exactly that reason. For RISK-012 it is how a "
+        "provider-side problem becomes visible before a customer reports it. "
+        "A.7.4 is excluded because FinFlow has no premises to monitor, and an exclusion "
+        "on those grounds is only honest if the risk it would have addressed went "
+        "somewhere. It went here. Unauthorised access to the estate is a logical event "
+        "for this organisation, detected through GuardDuty, Config and CloudTrail with "
+        "severity-based triage and ninety days of triage records, rather than a physical "
+        "one detected by cameras and door logs.",
         None,
         "GuardDuty, Config and CloudTrail alerting routed to an on-call rotation with "
         "severity-based triage timeframes; 90 days of triage records retained.",
@@ -836,10 +915,23 @@ SOA_ENTRIES: list[SoASpec] = [
     ),
     SoASpec(
         "A.8.28", True, IMPL, ENG,
-        f"{TODO} — RISK-011 and RISK-005 are both plausible drivers, and PCI-DSS secure "
-        "coding requirements flow down through the payment service provider contract. Pick "
-        "the driver you can defend and be specific about which coding weaknesses matter for "
-        "a payments product.",
+        "Necessary for RISK-005, exploitation of an application vulnerability in the "
+        "payments platform, and RISK-011, malicious or vulnerable third-party "
+        "dependency. RISK-005 is the primary driver: it concerns code FinFlow writes, "
+        "which is what this control governs, while RISK-011 concerns code FinFlow "
+        "imports and is treated principally through OP-003 scanning at the build gate. "
+        "The coding weaknesses that matter for a payments product are not generic. "
+        "Broken authorisation on transaction endpoints, where a request is authenticated "
+        "but not checked against ownership of the merchant account it names; missing "
+        "idempotency on payment submission, where a retried request becomes a second "
+        "charge; and injection into the reconciliation and reporting paths that read "
+        "across merchants. Those are the classes peer review and SAST are configured to "
+        "block, and high-severity findings either block merge or carry a recorded "
+        "waiver. "
+        "Secure coding obligations do flow down from the payment service provider "
+        "contract. They are noted rather than cited as the driver, because the risks "
+        "would require this control on their own and a justification that leans on a "
+        "contract is only as durable as the contract.",
         None,
         "Secure coding standards enforced through peer review and SAST; high-severity "
         "findings block merge or carry a recorded waiver.",

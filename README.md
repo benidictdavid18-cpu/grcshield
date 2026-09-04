@@ -539,11 +539,17 @@ deficient design as a cap on operating effectiveness — those are judgment call
 reasoning attached, and the reasoning is recorded in
 [DECISIONS.md](docs/DECISIONS.md).
 
-Around 25 fields carry the literal marker `TODO AUTHOR:BENNY` — five residual
-justifications, eight SoA inclusion justifications, four sampling rationales, and the
-decision records. They are deliberately unwritten. A justification I cannot defend in
-conversation is worse than an obvious gap, so the tool flags them in the API and the UI
-rather than filling them with plausible text.
+Twenty-five fields were written last, on purpose: five residual justifications, eight
+SoA inclusion justifications, four sampling rationales, and the closing argument of each
+decision record. Each needed a judgment the surrounding data does not make on its own,
+and several take a position worth arguing with — that deterrence earns no credit on
+RISK-018, that PCI DSS is not the driver for A.5.15, that A.8.12 stays applicable at
+forty people.
+
+The marker mechanism that flagged them is still enforced end to end, in the API, the PDF
+reports and the UI, and a test now fails the build if a justification is added without
+one. A field nobody has decided should be visibly undecided rather than quietly
+plausible.
 
 ---
 

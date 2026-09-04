@@ -8,14 +8,13 @@ Three of the four findings attach to remediation items that already exist from t
 gap analysis, because the work needed was already known and planned. Manufacturing four
 fresh remediation items would double-count the same effort.
 
-``sampling_rationale`` is left as ``TODO AUTHOR:BENNY`` on four tests: TEST-003,
+``sampling_rationale`` was written last on four tests, having been held: TEST-003,
 TEST-005, TEST-008 and TEST-011.
 """
 
 from datetime import date
 from typing import NamedTuple
 
-TODO = "TODO AUTHOR:BENNY"
 
 TESTER_ENG = "Priya Raghavan, Security Engineer"
 TESTER_COMPLIANCE = "Marcus Whitfield, Compliance Analyst"
@@ -103,9 +102,21 @@ CONTROL_TESTS: list[ControlTestSpec] = [
         "All 15 accounts holding a privileged role in the AWS production account at any "
         "point during the period.",
         15, 15, "FULL_POPULATION",
-        f"{TODO} — explain why a privileged population this small warrants full-population "
-        "testing rather than a sample, and what that choice buys you when the exception "
-        "rate turns out to be 40%.",
+        "The population is fifteen accounts, so every one of them was examined. "
+        "Sampling exists to make an unmanageable population manageable, and fifteen is "
+        "not unmanageable. A sample of five would have cost about the same to perform "
+        "and would have produced an estimate with an error bar wide enough to be "
+        "useless: at the observed rate, five accounts could plausibly have returned "
+        "anywhere between one and four exceptions. "
+        "What full-population testing bought became clear when the rate turned out to be "
+        "40%. The finding is that six specific privileged accounts authenticate without "
+        "a phishing-resistant factor — six accounts that can be named, remediated and "
+        "re-tested. A sample would have supported only the claim that roughly two in "
+        "five are uncovered, which is an argument rather than a work list, and it would "
+        "have left open the question of whether the untested accounts were better or "
+        "worse than the ones examined. "
+        "For a population this small and this consequential, sampling is a false "
+        "economy.",
         "Nine of fifteen privileged accounts (60%) have a phishing-resistant factor "
         "enrolled and the sign-on policy applied. Six do not.",
         6,
@@ -154,9 +165,23 @@ CONTROL_TESTS: list[ControlTestSpec] = [
         "All 18 applications and infrastructure entitlement sets in scope for the quarterly "
         "review.",
         18, 18, "FULL_POPULATION",
-        f"{TODO} — the population here is the review itself rather than individual users. "
-        "Explain why that is the right unit of testing for a periodic control, and what "
-        "you would have tested instead if the review had been continuous.",
+        "The population is the eighteen entitlement sets in scope for the quarterly "
+        "review, not the individual users within them, and that is the right unit "
+        "because the control is the review. AC-004 does not claim that every user holds "
+        "appropriate access at every moment; it claims that once a quarter an owner "
+        "examines a defined set of entitlements, attests to them, and that identified "
+        "revocations are carried out. Testing individual users would be testing the "
+        "state of access, which is a different control objective and one that A.5.18 "
+        "carries. "
+        "So the test follows the control's own logic: was each of the eighteen sets "
+        "reviewed, by the recorded owner, inside the window, and did the revocations it "
+        "produced actually happen. All eighteen and all twenty-three respectively. "
+        "Had the control been continuous rather than periodic there would be no review "
+        "event to test, and the population would have to change to the entitlement "
+        "changes themselves — every grant and revocation in the period, sampled, checked "
+        "against an approval and a joiner-mover-leaver trigger. That is a materially "
+        "harder test, and it is the trade a company makes when it moves from periodic "
+        "attestation to continuous enforcement.",
         "All 18 attestations were signed by the recorded owner within the review window. "
         "All 23 identified revocations were completed, with a median of 2 days to removal "
         "and none exceeding the 5-day target.",
@@ -215,9 +240,26 @@ CONTROL_TESTS: list[ControlTestSpec] = [
         "All 11 non-production data stores across the development, staging and analytics "
         "accounts.",
         11, 11, "FULL_POPULATION",
-        f"{TODO} — this test found a design deficiency rather than an operating failure. "
-        "Explain how the population you chose made that visible, and why a sample of the "
-        "application database alone would have concluded PASS.",
+        "The population is all eleven non-production data stores across the development, "
+        "staging and analytics accounts, and choosing the population that way is what "
+        "made the deficiency visible. "
+        "The obvious population would have been the masking job's own scope: the primary "
+        "application database, where the job runs nightly and works. Sampling that "
+        "database alone would have found a control operating exactly as designed and "
+        "concluded PASS — correctly, on its own terms, and uselessly. The control "
+        "objective is that non-production environments hold no real customer data, and "
+        "the analytics warehouse and the support tooling data store were never in the "
+        "job's scope to begin with. "
+        "That is a design deficiency rather than an operating failure, and the "
+        "distinction decides what happens next. An operating failure is fixed by making "
+        "the job run reliably; nothing about running it more reliably would have covered "
+        "the two stores holding roughly 12,000 unmasked records. The control has to be "
+        "redesigned to cover the environments that exist rather than the one it was "
+        "written for. "
+        "The general lesson is that defining the population from the control's stated "
+        "scope tests whether the control does what it says. Defining it from the "
+        "objective tests whether the objective is met, and only the second can find a "
+        "gap in the scope itself.",
         "The masking job covers the primary application database and operates correctly "
         "there. It does not cover the analytics warehouse or the support tooling data "
         "store, both of which were found to hold unmasked customer records including email "
@@ -282,9 +324,25 @@ CONTROL_TESTS: list[ControlTestSpec] = [
         "All 487 vulnerability findings raised during the period (6 critical, 78 high, "
         "403 medium).",
         487, 45, "JUDGMENTAL",
-        f"{TODO} — you weighted this sample towards critical and high. Justify that against "
-        "the fact that the exceptions all turned out to be in medium, and say whether the "
-        "weighting was still the right call.",
+        "Forty-five findings were selected judgmentally from a population of 487, "
+        "weighted towards the severities with the tightest SLAs: all 6 critical, 15 of "
+        "78 high, and 24 of 403 medium. The weighting follows consequence. A missed "
+        "seven-day SLA on a critical finding is a materially different exposure from a "
+        "missed ninety-day SLA on a medium one, and a proportionate sample would have "
+        "drawn roughly one critical finding and told me almost nothing about the "
+        "severity band that matters most. "
+        "The result complicates that reasoning rather than vindicating it. Every "
+        "critical and every sampled high finding was remediated within SLA; all three "
+        "exceptions fell in medium, the band deliberately under-sampled. "
+        "The weighting was still the right call, and the conclusion has to be stated "
+        "carefully because of it. The test was designed to answer whether the tightest "
+        "SLAs hold, and it answered that with reasonable confidence. It was not designed "
+        "to estimate the medium exception rate, and it cannot: 3 exceptions in 24 "
+        "sampled from 403 supports no reliable projection across the band. What the "
+        "result does establish is that medium findings breach SLA at all and without a "
+        "documented exception approval, which was not known before. "
+        "The honest next step is a separate, proportionate test of the medium "
+        "population, not a re-reading of this one.",
         "All 6 critical and all 15 sampled high findings were remediated within SLA. Of 24 "
         "sampled medium findings, 3 exceeded the 90-day SLA, none with a documented "
         "exception approval.",

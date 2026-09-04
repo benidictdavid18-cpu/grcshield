@@ -7,10 +7,11 @@ Nine decisions that shaped this project, recorded in the form an architecture de
 record takes: what the situation was, what was chosen, what else was on the table, and
 what it cost.
 
-**Every record below is marked `TODO AUTHOR:BENNY — expand in my own words`.** The
-reasoning is captured so nothing is lost; the writing is deliberately left to be redone
-by the author. An argument you have not written in your own words is an argument you
-cannot defend when someone pushes back on it.
+Each record closes with a section headed **In my own words**, which answers the
+question that record is most likely to be challenged on. Those sections exist because an
+argument you have not written in your own words is an argument you cannot defend when
+someone pushes back on it — and every decision here has a version of itself that sounds
+reasonable and is wrong.
 
 ---
 
@@ -50,9 +51,29 @@ matters — inherent 4×5, residual 3×5, impact unmoved. No single percentage p
 The cost shows up in the seed data: five justifications are unwritten because writing
 twenty defensible ones is genuinely hard.
 
-> **TODO AUTHOR:BENNY — expand in my own words.**
-> Worth adding: the moment you realised the arithmetic model was wrong, and whether you
-> would still choose this on a register of 200 risks rather than 20.
+### In my own words
+
+I started with the arithmetic. It was obvious, everyone does it, and it broke on the
+fourth risk I wrote.
+
+RISK-004 is compromise of a privileged AWS account. MFA is enforced on 60% of privileged
+accounts, so under the percentage model I had a control that was 60% effective and a
+residual of 20 × 0.4 = 8. That number said the risk had dropped from Critical to Medium.
+But an attacker who phishes one of the six uncovered accounts reaches the entire
+production estate and every customer record in it. The consequence had not moved at all.
+The only thing MFA changed was how likely it was that someone got in.
+
+That is when I understood that a single percentage cannot express a two-dimensional
+judgment. Likelihood 4 to 3, impact unchanged at 5, residual 15. No multiplier produces
+that, because a multiplier acts on the product and cannot act on one factor.
+
+**Would I still do it at 200 risks?** Yes, and I would expect to be argued with. The
+honest cost is that twenty defensible justifications took real work and two hundred would
+take a team. What I would not do is switch to arithmetic to make the volume manageable,
+because the volume is not the problem the arithmetic solves — it hides the problem. What
+I would add is a review cadence proportionate to band, so that Critical and High risks
+get a written justification every cycle and Low ones get one on change. Scaling the
+process is a different question from scaling the maths.
 
 ---
 
@@ -92,9 +113,36 @@ instead of quietly claiming improvement. The extension to `TESTED_INEFFECTIVE` i
 judgment beyond the brief; it lives in one named constant, `NON_CREDITING_BASES`, and can
 be narrowed back in a one-line edit.
 
-> **TODO AUTHOR:BENNY — expand in my own words.**
-> The interview question here is "what if the control obviously works and you just
-> haven't got round to testing it?" Have an answer.
+### In my own words
+
+The challenge is fair and it comes up every time: *the control obviously works, I just
+have not tested it yet — are you really going to make my register look worse over
+paperwork?*
+
+Two answers, and the second matters more.
+
+The first is that "obviously works" is a prediction, and the ones that turn out to be
+wrong are exactly the ones nobody thought worth testing. DP-005 is the example sitting
+in this repository. Production data is masked before use in non-production — it was
+designed, it was documented, it ran nightly, and it obviously worked. TEST-008 examined
+all eleven non-production stores and found two of them holding around 12,000 unmasked
+customer records, because the masking job had never covered the analytics warehouse or
+the support tooling. Nobody was lying. The control worked perfectly, on the environments
+it had been written for, and the world had grown two more.
+
+The second is about what the number is for. A residual score is not a description of how
+secure I feel; it is a claim I am asking someone else to rely on. The CTO uses it to
+decide where money goes. An auditor uses it to decide whether the ISMS is credible. If I
+credit an untested control, I have converted my confidence into their evidence, and they
+have no way to tell the difference.
+
+So the register lets you score residual *at* inherent and explain yourself. That is
+always permitted. What it refuses is a lower number with nothing behind it. RISK-019 sits
+at its inherent level with both controls untested, and the honest reading of that row is
+"we have not checked", which is a true statement and a useful one.
+
+There is a cost and I will not pretend otherwise: the register looks worse than the
+organisation probably is. I would rather be wrong in that direction.
 
 ---
 
@@ -132,8 +180,30 @@ objectives, not the minutes an incumbent bank commits to — and that is a delib
 funded decision recorded in EXC-002. Data Privacy carries the lowest. No approver is the
 security function, and a seed check fails the build if one ever is.
 
-> **TODO AUTHOR:BENNY — expand in my own words.**
-> Be ready for "who actually sets appetite at a 40-person company, realistically?"
+### In my own words
+
+*Who actually sets appetite at a 40-person company?* Realistically: three or four people
+in a room, once, and then nobody revisits it. Pretending otherwise would be theatre.
+
+What I think the honest version looks like is that appetite is not really *set* at this
+size — it is **discovered and then written down**. The business already behaves as though
+it has an appetite. FinFlow runs in one AWS region with no warm standby, which is a
+statement about how much continuity risk it will carry, made by whoever signed off the
+architecture. The register's job is to name that position, attach the person who owns the
+consequence, and put a date on it, so it becomes reviewable instead of ambient.
+
+That is why the approver is per category rather than a single sign-off. The person who
+answers for a payment outage is not the person who answers for a personal data breach,
+and asking one executive to hold both positions produces a number nobody feels
+accountable for. Business Continuity carries the highest appetite in this register, and
+the reason is legible: EXC-002 records the CEO accepting single-region operation to
+2027-06-30, funded and dated. Data Privacy carries the lowest because the DPO would not
+sign anything else.
+
+The rule I care most about here is the one about who cannot approve. Security advises on
+risk; it does not get to accept it. A seed check fails the build if any appetite approver
+is the security function, because an appetite the security team set for itself is not a
+business decision, it is a preference.
 
 ---
 
@@ -171,8 +241,34 @@ refused.
 An exposure carried without a decision is worse than a documented acceptance — nobody has
 agreed to it — and most tools cannot answer the question at all.
 
-> **TODO AUTHOR:BENNY — expand in my own words.**
-> EXC-004 is the record to talk about: the acceptance the CTO refused, and why.
+### In my own words
+
+EXC-004 is the record I would open first, because it is the only one in the register
+where the answer was no.
+
+The Head of Engineering requested a time-boxed acceptance of the privileged MFA gap —
+RISK-004, the six accounts on legacy password-only paths. The request was reasonable on
+its face: remediation was already open, the fix had a date, and an acceptance would have
+stopped the risk sitting above appetite in the meantime.
+
+The CTO refused it at management review, and the reasoning is recorded. Accepting a known
+privileged access gap while actively seeking certification is not a position you can
+defend to an auditor — it reads as knowing about the hole and choosing to keep it. And
+the compensating controls named in the request are detective: OP-001 logging and OP-002
+monitoring tell you an incident happened and shorten it. They do not stop the credential
+working.
+
+What makes this the record worth talking about is that most acceptance registers cannot
+hold it. They are built to record approvals, so a refusal has nowhere to live and simply
+does not appear — which means the register describes a company that agreed to everything
+it was asked. **A register that only records approvals is a record of agreement, not of
+decisions.**
+
+The consequence is visible on the dashboard and it is uncomfortable. Because EXC-004 was
+refused and EXC-003 expired, all seven risks above appetite currently have no live
+acceptance covering them. That number is worse than a register full of tidy approvals,
+and it is the truer one: an exposure nobody has agreed to carry is worse than a
+documented acceptance, not better.
 
 ---
 
@@ -209,8 +305,32 @@ One visible, deliberate gap: **A.5.34 maps to no SOC 2 criterion**, because FinF
 not elect the Privacy Trust Services category. It is left visible and asserted in a test
 rather than filled with a loose mapping.
 
-> **TODO AUTHOR:BENNY — expand in my own words.**
-> "Why not just do SOC 2 as well, everyone asks for it" is a likely challenge.
+### In my own words
+
+*Why not just do SOC 2 as well — every enterprise buyer asks for it.*
+
+Because "as well" is doing a lot of work in that sentence. SOC 2 is not a second checklist
+you tick alongside the first; it is an attestation over a period, performed by a CPA firm,
+against criteria you have selected and described. The expensive part is not the controls,
+which overlap heavily with Annex A. It is the evidence discipline: a Type II report covers
+six to twelve months of operation, so every control has to have been operating, and
+provably operating, for the whole window.
+
+FinFlow currently tests 31.4% of its control library within frequency. Committing to a
+second framework at that level of maturity would not produce two certifications; it would
+produce two half-finished programmes and an auditor in each one asking why the evidence
+stops.
+
+So SOC 2 is mapped *from* ISO rather than assessed separately — 61 criteria, 127 typed
+mappings, marked equivalent, partial or supporting. That is worth real money to a sales
+conversation: it answers "how far are you from SOC 2" with a mapped gap list instead of a
+shrug, and it means the work already done counts toward the second framework when the
+company decides to do it.
+
+The honest limitation, and I would say it before being asked: a mapping is not an
+assessment. Nothing in this application claims FinFlow meets a Trust Services Criterion.
+It claims the ISO control that would satisfy it exists and what state it is in, which is
+the most a mapping can honestly say.
 
 ---
 
@@ -255,9 +375,30 @@ A.8.3, A.8.16, A.8.24. Six A.7 controls are *kept*, because a remote workforce r
 physical risk into homes and repair shops rather than removing it. Excluding all fourteen
 is the standard remote-first mistake.
 
-> **TODO AUTHOR:BENNY — expand in my own words.**
-> "Who approves the SoA, and what happens to an applicable-but-not-implemented control?"
-> is on your own prep list. Answer it here.
+### In my own words
+
+**Who approves it.** The SoA is approved by the ISMS manager and signed off at management
+review, and the record carries `approved_by`, `approved_date` and a version. That matters
+because the SoA is not a working document — it is a statement the organisation makes,
+versioned, that an auditor reads first and holds you to. A document everyone can edit and
+nobody signed is a spreadsheet.
+
+**What happens to an applicable-but-not-implemented control.** It becomes a gap, and the
+system will not let it be anything else. An entry that is applicable and not fully
+implemented must carry at least one remediation item with an owner and a due date, or the
+write is refused with a 422. Both fields are NOT NULL, so the rule cannot be satisfied
+with an empty promise.
+
+That is the rule I would defend hardest here, because the alternative is the failure mode
+every weak SoA has. Marking a control applicable is easy and costs nothing. Marking it
+*not implemented* is honest. Doing both and then leaving the row alone is how a control
+stays open for two years while the document continues to assert it is in scope — the
+organisation has written down that it needs the control and taken no position on when it
+will have it.
+
+There are 29 such gaps in this SoA and every one has a name and a date against it. The
+uncomfortable consequence is a remediation register with real overdue items in it, which
+is the point: the gap is not the problem, the untracked gap is.
 
 ---
 
@@ -299,8 +440,39 @@ appetite, which downgraded A.8.11 to a gap, which raised DPIA-001's residual to 
 which triggered an Article 36 consultation obligation. Phase 3's numbers changed because
 Phase 4 found something. That is the system working.
 
-> **TODO AUTHOR:BENNY — expand in my own words.**
-> This cascade is the strongest thing in the project to walk someone through.
+### In my own words
+
+This is the walkthrough I would give, because it is the only part of the project where
+you can watch a single fact move through six modules and change the answer in all of
+them.
+
+TEST-008 tested DP-005, production data masking, across all eleven non-production stores.
+Two of them — the analytics warehouse and the support tooling — held unmasked customer
+records, roughly 12,000 of them. The test concluded FAIL.
+
+Then everything downstream moved on its own:
+
+- **The control library.** DP-005 was rated design-deficient, not just
+  operating-ineffective. The masking job runs perfectly on the database it covers; the
+  problem is that it was never written to cover the other two. That distinction decides
+  the remediation — you cannot fix a scope gap by making the job more reliable.
+- **The risk register.** RISK-008 lost the reduction it had been carrying, because the
+  control it leaned on may no longer be credited.
+- **RISK-018** went back to its inherent level entirely, since DP-005 was the only linked
+  control addressing curiosity-driven browsing.
+- **The SoA.** A.8.11 went from implemented to a gap.
+- **The GDPR records.** ROPA-003 lists DP-005 among its Article 30(1)(g) security
+  measures, and the API now returns `credited: false` on it. DPIA-001 was reassessed from
+  medium to high residual — and Article 36(1) then forced the outcome to change with it,
+  because a DPIA showing high residual risk after mitigation requires consulting the
+  supervisory authority before proceeding.
+- **The dashboard.** KRI-003 fell from 66.7% to 65.5%. It had risen for five straight
+  months. A stored metric would have kept climbing.
+
+The line I would end on: **one test result, and the number on the board went down.** That
+is what "the modules are connected" actually means, and it is the difference between a
+system that enforces a methodology and a set of forms that happen to sit in the same
+database.
 
 ---
 
@@ -339,8 +511,32 @@ Two flags currently: `RISK-001/AC-002` and `RISK-015/AC-002`. Both are legitimat
 population-scoping judgments. Blocking would have forced understatement; hiding would have
 let a real overstatement pass. Showing it puts the question in front of a human.
 
-> **TODO AUTHOR:BENNY — expand in my own words.**
-> If asked "why not just link the test?", the honest answer is scope — say so.
+### In my own words
+
+*Why not just link each risk-control row to the specific test that supports it?*
+
+Because that is the right answer and I did not build it. I want to say that plainly rather
+than construct a principle around a scope decision.
+
+It would work like this: RISK-001 links to AC-002 on the basis of TEST-002, which tested
+workforce MFA and passed clean. RISK-004 links to the same control on the basis of
+TEST-003, which tested the privileged population and found 40% uncovered. Same control,
+two populations, two genuinely different levels of assurance — and with the test attached
+there is no ambiguity to flag, because the evidence for each claim is named.
+
+What stopped me was that it needs a schema change, a join, and a decision about what
+happens when a link's test is superseded or withdrawn, to solve a problem the optimism
+flag already makes visible. Two links are flagged today, RISK-001/AC-002 and
+RISK-015/AC-002, and both turn out to be legitimate population-scoping judgments. The flag
+put the question in front of a human and the human answered it.
+
+The reason I flag rather than block is separate and I do stand behind it. Blocking would
+force the analyst to record a *weaker* basis than their evidence supports, and a register
+that systematically understates assurance is not more honest than one that overstates it
+— it is just wrong in the flattering-to-nobody direction. Claiming a test that never
+happened is different, and that is refused outright.
+
+If this were going further, linking the test is the first thing I would build.
 
 ---
 
@@ -427,6 +623,34 @@ uniformly. And the whole feature depends on a model good enough to be useful: co
 mapping asks a model to select from 93 Annex A controls, and a 3B model does it
 inconsistently.
 
-> **TODO AUTHOR:BENNY — expand in my own words.**
-> The question you will get is "so what does the AI actually add, if it cannot do
-> anything?" Have the answer ready — and it is not a defensive one.
+### In my own words
+
+*So what does it actually add, if it cannot do anything?*
+
+The first version deserved that question. It drafted risk statements and summarised
+records, and a drafting assistant that cannot decide anything is close to a text box with
+extra steps. Every tool has one.
+
+The answer is that I was using it for the wrong job. **It is a reviewer, not a writer.**
+
+Here is the case it is for. TEST-008 rated DP-005 ineffective. ROPA-003 — the GDPR
+processing record for support ticket handling — still lists DP-005 among its Article
+30(1)(g) security measures. Those two records cannot both be describing the world. And
+the second one is not an internal note: a RoPA entry is a statement about how personal
+data is protected, and it currently names a protection that is not operating.
+
+No validation rule catches that. I could write one for this exact pair, and then another
+for tests against BIA recovery assumptions, and another for findings against SoA
+implementation status — a rule per pair of record types, forever, and the contradictions
+that matter are the ones nobody predicted. Reading a dozen records written by different
+people at different times and noticing that two of them have drifted apart is
+comprehension work. It is the thing a language model is genuinely good at and the thing a
+rule engine genuinely cannot do.
+
+And "it cannot decide" stops being a limitation the moment you use it this way. A reviewer
+is *supposed* to raise the question and leave it open. The sweep reports which records
+disagree and what it would ask; which one is right — and often neither is, because the
+world moved and only one got updated — is mine to settle.
+
+The economics are also the right way round. A wrong flag costs me thirty seconds of
+reading. A wrong draft that someone accepts costs me a register I cannot defend.

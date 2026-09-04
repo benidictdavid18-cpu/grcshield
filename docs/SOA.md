@@ -137,12 +137,21 @@ green-looking SoA can still be hollow:
 - **Overdue remediation** (currently 2 — REM-006 and REM-017).
 - **Justifications outstanding** (currently 8).
 
-## Outstanding for the author
+## The eight that needed a decision
 
-Eight inclusion justifications are deliberately unwritten, marked `TODO AUTHOR:BENNY`
-with a one-line hint about what must be decided:
+Every inclusion justification is written. Eight were held back until last because the
+driver was a judgment rather than an obvious single risk:
 
 **A.5.7, A.5.15, A.5.23, A.6.3, A.8.5, A.8.12, A.8.16, A.8.28**
+
+Three of the positions taken are worth disagreeing with. **A.5.15** cites RISK-004 and
+RISK-002 rather than PCI DSS, because FinFlow stores no cardholder data and citing a
+standard the scope statement excludes would be an overstatement. **A.8.12** stays
+applicable and not implemented even though full data loss prevention tooling is
+disproportionate at forty people — because the controls expected to carry the objective
+between them were A.8.3 and A.8.11, and A.8.11 is currently failing. **A.5.23** names the
+AWS SOC 2 report as the assurance behind all nine A.7 exclusions, and then says plainly
+that the report on file has expired.
 
 Two of them are the hard ones. A.5.23 carries the weight of all nine A.7 exclusions —
 it has to state what FinFlow retains under shared responsibility and what it does not.
