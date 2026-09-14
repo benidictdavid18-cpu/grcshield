@@ -4,7 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.api.deps import current_user
 from app.db.session import get_db
+from app.models.audit_trail import AuditAction
 from app.models.risk import (
     Control,
     ControlAnnexALink,
@@ -12,6 +14,7 @@ from app.models.risk import (
     RiskAppetiteThreshold,
     RiskControl,
 )
+from app.models.user import User
 from app.schemas.risk import (
     AppetiteComparisonOut,
     AppetiteOut,
@@ -23,6 +26,7 @@ from app.schemas.risk import (
     RiskSummaryOut,
     ScoreOut,
 )
+from app.services import audit_trail
 from app.services.risk_scoring import (
     CATEGORY_LABELS,
     RiskBand,
@@ -178,7 +182,10 @@ def get_risk(risk_ref: str, db: Session = Depends(get_db)) -> RiskDetailOut:
 
 @router.patch("/risks/{risk_ref}/residual", response_model=RiskDetailOut)
 def update_residual(
-    risk_ref: str, payload: ResidualUpdateIn, db: Session = Depends(get_db)
+    risk_ref: str,
+    payload: ResidualUpdateIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
 ) -> RiskDetailOut:
     """Re-score residual risk.
 
@@ -211,9 +218,50 @@ def update_residual(
         )
         raise HTTPException(status_code=422, detail=detail)
 
+    before = audit_trail.snapshot(risk, _RESIDUAL_FIELDS)
     risk.residual_likelihood = payload.residual_likelihood
     risk.residual_impact = payload.residual_impact
     risk.residual_justification = payload.residual_justification
+    after = audit_trail.snapshot(risk, _RESIDUAL_FIELDS)
+
+    # Same transaction as the change: a re-score with no trail entry cannot happen.
+    # Re-submitting identical values is not a decision and leaves no event.
+    if audit_trail.changed_fields(before, after):
+        score_moved = (before["residual_likelihood"], before["residual_impact"]) != (
+            after["residual_likelihood"],
+            after["residual_impact"],
+        )
+        audit_trail.record_change(
+            db,
+            actor=user,
+            action=AuditAction.RESIDUAL_RESCORED,
+            record_type="RISK",
+            record_ref=risk.risk_ref,
+            before=before,
+            after=after,
+            summary=(
+                f"Residual re-scored from {before['residual_likelihood']} x "
+                f"{before['residual_impact']} ({before['residual_score']}, "
+                f"{before['residual_band']}) to {after['residual_likelihood']} x "
+                f"{after['residual_impact']} ({after['residual_score']}, "
+                f"{after['residual_band']})."
+                if score_moved
+                else (
+                    f"Residual justification revised; score unchanged at "
+                    f"{after['residual_likelihood']} x {after['residual_impact']} "
+                    f"({after['residual_score']}, {after['residual_band']})."
+                )
+            ),
+        )
     db.commit()
     db.refresh(risk)
     return _detail(risk, _load_thresholds(db))
+
+
+_RESIDUAL_FIELDS = (
+    "residual_likelihood",
+    "residual_impact",
+    "residual_score",
+    "residual_band",
+    "residual_justification",
+)

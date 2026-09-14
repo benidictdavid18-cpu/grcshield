@@ -8,6 +8,7 @@ from app.models.audit import (
     ManagementReview,
     Nonconformity,
 )
+from app.models.audit_trail import AuditAction, AuditEvent
 from app.models.framework import (
     ControlMapping,
     Framework,
@@ -38,7 +39,6 @@ from app.models.risk import (
     RiskAppetiteThreshold,
     RiskControl,
 )
-from app.models.user import Role, User
 from app.models.soa import (
     Evidence,
     EvidenceType,
@@ -53,12 +53,15 @@ from app.models.soa import (
     SoARemediationLink,
     SoARiskLink,
 )
+from app.models.user import Role, User
 
 __all__ = [
     "AiFeature",
     "AiInteraction",
     "AiInteractionStatus",
     "Asset",
+    "AuditAction",
+    "AuditEvent",
     "AuditFinding",
     "BiaAssetLink",
     "BiaControlLink",

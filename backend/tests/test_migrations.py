@@ -18,14 +18,14 @@ Those need a real PostgreSQL instance.
 from pathlib import Path
 
 import pytest
+from sqlalchemy import create_engine, inspect
+
+import app.models  # noqa: F401  -- registers every table on Base.metadata
 from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from sqlalchemy import create_engine, inspect
-
-import app.models  # noqa: F401  -- registers every table on Base.metadata
 from app.db.base import Base
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
@@ -62,13 +62,13 @@ def migrated(tmp_path, monkeypatch):
 def test_the_chain_is_linear_with_no_gaps_or_branches():
     script = ScriptDirectory(str(BACKEND_ROOT / "alembic"))
     revisions = list(script.walk_revisions())
-    assert len(revisions) == 8
+    assert len(revisions) == 9
     # Newest first; each must point at its predecessor.
     ordered = [r.revision for r in revisions][::-1]
     assert ordered == [
-        "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008",
+        "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009",
     ]
-    assert script.get_current_head() == "0008"
+    assert script.get_current_head() == "0009"
     for revision in revisions:
         assert not isinstance(revision.down_revision, tuple), "no branching allowed"
 
@@ -77,7 +77,7 @@ def test_the_chain_runs_from_empty_to_head(migrated):
     version = migrated.connect().exec_driver_sql(
         "select version_num from alembic_version"
     ).scalar()
-    assert version == "0008"
+    assert version == "0009"
 
 
 def test_migrations_create_every_table_the_models_declare(migrated):

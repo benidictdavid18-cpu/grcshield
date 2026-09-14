@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.deps import current_user, require_write
 from app.api.routes import (
     ai,
+    audit_trail,
     auth,
     frameworks,
     health,
@@ -77,6 +78,7 @@ _protected = [
     privacy.router,
     metrics.router,
     reports.router,
+    audit_trail.router,
 ]
 for router in _protected:
     app.include_router(router, dependencies=[Depends(require_write)])

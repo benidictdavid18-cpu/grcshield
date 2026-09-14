@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.api.deps import current_user
+from app.core import clock
 from app.db.session import get_db
 from app.models.audit import (
     AuditFinding,
@@ -12,6 +14,7 @@ from app.models.audit import (
     ControlTestEvidenceLink,
     FindingRemediationLink,
 )
+from app.models.audit_trail import AuditAction
 from app.models.risk import Control, ControlAnnexALink, RiskControl
 from app.models.soa import (
     Evidence,
@@ -20,6 +23,7 @@ from app.models.soa import (
     RemediationSource,
     RemediationStatus,
 )
+from app.models.user import User
 from app.schemas.audit import (
     ControlTestCreateIn,
     ControlTestDetailOut,
@@ -31,6 +35,7 @@ from app.schemas.audit import (
     TestEvidenceOut,
     TestingOverviewOut,
 )
+from app.services import audit_trail
 from app.services.control_testing import (
     CONCLUSION_TO_OPERATING,
     DesignEffectiveness,
@@ -52,7 +57,7 @@ router = APIRouter(tags=["control testing"])
 
 
 def _today() -> date:
-    return date.today()
+    return clock.today()
 
 
 def _control_query():
@@ -128,7 +133,10 @@ def list_internal_controls(
 
 @router.patch("/internal-controls/{control_id}/effectiveness", response_model=InternalControlOut)
 def update_effectiveness(
-    control_id: str, payload: EffectivenessUpdateIn, db: Session = Depends(get_db)
+    control_id: str,
+    payload: EffectivenessUpdateIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
 ) -> InternalControlOut:
     """Re-rate a control's design and operating effectiveness.
 
@@ -151,10 +159,28 @@ def update_effectiveness(
             detail=[{"field": v.field, "message": v.message} for v in violations],
         )
 
+    before = audit_trail.snapshot(control, _EFFECTIVENESS_FIELDS)
     control.design_effectiveness = design
     control.operating_effectiveness = operating
     if "effectiveness_note" in updates:
         control.effectiveness_note = updates["effectiveness_note"]
+    after = audit_trail.snapshot(control, _EFFECTIVENESS_FIELDS)
+    changed = audit_trail.changed_fields(before, after)
+    if changed:
+        audit_trail.record_change(
+            db,
+            actor=user,
+            action=AuditAction.CONTROL_EFFECTIVENESS_UPDATED,
+            record_type="CONTROL",
+            record_ref=control.control_id,
+            before=before,
+            after=after,
+            summary=(
+                f"Effectiveness re-rated: design {before['design_effectiveness']} -> "
+                f"{after['design_effectiveness']}, operating "
+                f"{before['operating_effectiveness']} -> {after['operating_effectiveness']}."
+            ),
+        )
     db.commit()
     db.refresh(control)
 
@@ -298,7 +324,9 @@ def _next_ref(db: Session, model, column, prefix: str) -> str:
 
 @router.post("/control-tests", response_model=ControlTestDetailOut, status_code=201)
 def create_control_test(
-    payload: ControlTestCreateIn, db: Session = Depends(get_db)
+    payload: ControlTestCreateIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
 ) -> ControlTestDetailOut:
     """Record a workpaper.
 
@@ -426,12 +454,73 @@ def create_control_test(
     if validate_effectiveness(control.design_effectiveness, implied):
         # A deficient design cannot support an EFFECTIVE rating even after a clean test.
         implied = OperatingEffectiveness.EFFECTIVE_WITH_EXCEPTIONS
+    rating_before = audit_trail.snapshot(control, _EFFECTIVENESS_FIELDS)
     control.operating_effectiveness = implied
     control.last_tested = payload.test_date
+    rating_after = audit_trail.snapshot(control, _EFFECTIVENESS_FIELDS)
+
+    # Two events, because two records changed. The workpaper is new; the control's
+    # rating moved as a consequence, and an auditor asking why AC-006 is now rated
+    # EFFECTIVE_WITH_EXCEPTIONS should find the test that did it.
+    raised = requires_finding(payload.conclusion)
+    cascade = {
+        "finding_ref": finding.finding_ref if raised else None,
+        "remediation_ref": remediation.remediation_ref if raised else None,
+    }
+    audit_trail.record_change(
+        db,
+        actor=user,
+        action=AuditAction.CONTROL_TEST_RECORDED,
+        record_type="CONTROL_TEST",
+        record_ref=test.test_ref,
+        before=None,
+        after={
+            "control_id": control.control_id,
+            "conclusion": payload.conclusion,
+            "sample_size": payload.sample_size,
+            "population_size": payload.population_size,
+            "exceptions_count": payload.exceptions_count,
+            "tester": payload.tester,
+            "reviewed_by": payload.reviewed_by,
+            **cascade,
+        },
+        summary=(
+            f"{test.test_ref} recorded against {control.control_id}: "
+            f"{payload.conclusion.value}, {payload.exceptions_count} exception(s) in "
+            f"{payload.sample_size} of {payload.population_size}."
+            + (
+                f" Raised {cascade['finding_ref']} and {cascade['remediation_ref']}."
+                if raised
+                else ""
+            )
+        ),
+    )
+    if audit_trail.changed_fields(rating_before, rating_after):
+        audit_trail.record_change(
+            db,
+            actor=user,
+            action=AuditAction.CONTROL_EFFECTIVENESS_UPDATED,
+            record_type="CONTROL",
+            record_ref=control.control_id,
+            before=rating_before,
+            after=rating_after,
+            summary=(
+                f"Operating effectiveness {rating_before['operating_effectiveness']} -> "
+                f"{rating_after['operating_effectiveness']}, implied by {test.test_ref}."
+            ),
+        )
 
     db.commit()
     db.refresh(test)
     return _test_detail(test, _today())
+
+
+_EFFECTIVENESS_FIELDS = (
+    "design_effectiveness",
+    "operating_effectiveness",
+    "effectiveness_note",
+    "last_tested",
+)
 
 
 # --- Findings ------------------------------------------------------------------

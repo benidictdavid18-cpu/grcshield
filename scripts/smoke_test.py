@@ -315,7 +315,42 @@ def main() -> int:
             request(base, "/risks/summary", token=auditor)[0] == 200,
         )
 
-    _ = manager
+    # --- The audit trail -------------------------------------------------------
+    # The manager re-scores RISK-004 and then puts it back. The register ends where it
+    # started; the trail carries both decisions, with the actor and the values.
+    original = request(base, "/risks/RISK-004", token=manager)[1]
+    status, _ = request(
+        base, "/risks/RISK-004/residual", token=manager, method="PATCH",
+        body={
+            "residual_likelihood": 2, "residual_impact": 5,
+            "residual_justification": "Smoke test: temporary re-score, restored below.",
+        },
+    )
+    if check("manager can re-score a residual", status == 200, f"got {status}"):
+        status, events = request(base, "/audit-events?record_ref=RISK-004&limit=1", token=auditor)
+        check("auditor can read the audit trail", status == 200, f"got {status}")
+        event = events[0] if isinstance(events, list) and events else {}
+        check("the re-score left an event", event.get("action") == "RESIDUAL_RESCORED")
+        check("the event names the actor", event.get("actor_username") == MANAGER[0])
+        check(
+            "the event carries before and after",
+            event.get("before", {}).get("residual_likelihood") == 3
+            and event.get("after", {}).get("residual_likelihood") == 2,
+        )
+        check("impact did not move, and the trail shows it", event.get("after", {}).get("residual_impact") == 5)
+
+        status, _ = request(
+            base, "/risks/RISK-004/residual", token=manager, method="PATCH",
+            body={
+                "residual_likelihood": original["residual"]["likelihood"],
+                "residual_impact": original["residual"]["impact"],
+                "residual_justification": original["residual_justification"],
+            },
+        )
+        check("residual restored", status == 200, f"got {status}")
+        restored = request(base, "/risks/RISK-004", token=manager)[1]
+        check("RISK-004 is back where it started", restored["residual"] == original["residual"])
+
     return report()
 
 

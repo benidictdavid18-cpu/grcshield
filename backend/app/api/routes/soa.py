@@ -4,8 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.api.deps import current_user
+from app.core import clock
 from app.db.session import get_db
 from app.models.audit import ControlTest
+from app.models.audit_trail import AuditAction
 from app.models.risk import RiskAppetiteThreshold
 from app.models.soa import (
     ImplementationStatus,
@@ -15,6 +18,7 @@ from app.models.soa import (
     SoARemediationLink,
     SoARiskLink,
 )
+from app.models.user import User
 from app.reports.soa_report import render_soa_gap_report
 from app.schemas.soa import (
     EvidenceOut,
@@ -29,6 +33,7 @@ from app.schemas.soa import (
     ThemeSummaryOut,
 )
 from app.seed.annex_a_2022 import THEME_TITLES
+from app.services import audit_trail
 from app.services.risk_scoring import CATEGORY_LABELS
 from app.services.soa_validation import AUTHOR_TODO_MARKER, entry_errors
 
@@ -36,7 +41,7 @@ router = APIRouter(prefix="/soa", tags=["statement of applicability"])
 
 
 def _today() -> date:
-    return date.today()
+    return clock.today()
 
 
 def _entry_query():
@@ -333,7 +338,10 @@ def get_entry(control_ref: str, db: Session = Depends(get_db)) -> SoADetailOut:
 
 @router.patch("/{control_ref}", response_model=SoADetailOut)
 def update_entry(
-    control_ref: str, payload: SoAUpdateIn, db: Session = Depends(get_db)
+    control_ref: str,
+    payload: SoAUpdateIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
 ) -> SoADetailOut:
     """Update an SoA entry, enforcing Clause 6.1.3 d).
 
@@ -389,6 +397,20 @@ def update_entry(
             detail=[{"field": e.field, "message": e.message} for e in errors],
         )
 
+    changed = audit_trail.changed_fields(original, proposed)
+    if changed:
+        # Only a change that actually changed something is an event. Re-submitting the
+        # same values is not a decision anyone needs to answer for.
+        audit_trail.record_change(
+            db,
+            actor=user,
+            action=AuditAction.SOA_ENTRY_UPDATED,
+            record_type="SOA_ENTRY",
+            record_ref=entry.control_ref,
+            before=original,
+            after=proposed,
+            summary=f"SoA entry updated: {', '.join(changed)}.",
+        )
     db.commit()
     db.refresh(entry)
     return _detail(entry, _thresholds(db), _today(), _tests_for(db, entry))

@@ -6,7 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.api.deps import current_user
+from app.core import clock
 from app.db.session import get_db
+from app.models.audit_trail import AuditAction
 from app.models.privacy import (
     Asset,
     BiaAssetLink,
@@ -23,6 +26,7 @@ from app.models.privacy import (
     RopaRiskLink,
 )
 from app.models.risk import Risk, RiskAppetiteThreshold
+from app.models.user import User
 from app.schemas.privacy import (
     AssetOut,
     BiaOut,
@@ -35,21 +39,21 @@ from app.schemas.privacy import (
     PrivacyOverviewOut,
     RopaOut,
 )
+from app.services import audit_trail
+from app.services.control_testing import OperatingEffectiveness
 from app.services.privacy_continuity import (
     EXPIRY_WARNING_DAYS,
     DpiaOutcome,
-    ExceptionStatus,
     LawfulBasis,
     ResidualRiskLevel,
     validate_exception,
 )
-from app.services.control_testing import OperatingEffectiveness
 
 router = APIRouter(tags=["privacy and continuity"])
 
 
 def _today() -> date:
-    return date.today()
+    return clock.today()
 
 
 def _thresholds(db: Session) -> dict:
@@ -180,7 +184,11 @@ def exception_summary(db: Session = Depends(get_db)) -> ExceptionSummaryOut:
 
 
 @router.post("/risk-exceptions", response_model=ExceptionOut, status_code=201)
-def create_exception(payload: ExceptionCreateIn, db: Session = Depends(get_db)) -> ExceptionOut:
+def create_exception(
+    payload: ExceptionCreateIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_user),
+) -> ExceptionOut:
     """Record a risk acceptance.
 
     Two rules an acceptance register exists to enforce:
@@ -226,6 +234,28 @@ def create_exception(payload: ExceptionCreateIn, db: Session = Depends(get_db)) 
         status=payload.status,
     )
     db.add(exception)
+    db.flush()
+    audit_trail.record_change(
+        db,
+        actor=user,
+        action=AuditAction.RISK_EXCEPTION_RECORDED,
+        record_type="RISK_EXCEPTION",
+        record_ref=exception.exception_ref,
+        before=None,
+        after={
+            "risk_ref": risk.risk_ref,
+            "requested_by": payload.requested_by,
+            "approver_role": payload.approver_role,
+            "approval_date": payload.approval_date,
+            "expiry_date": payload.expiry_date,
+            "status": payload.status,
+        },
+        summary=(
+            f"{exception.exception_ref} recorded for {risk.risk_ref}: "
+            f"{payload.status.value}, approver {payload.approver_role}, "
+            f"expires {payload.expiry_date.isoformat()}."
+        ),
+    )
     db.commit()
     db.refresh(exception)
     return _exception_out(exception, _thresholds(db), _today())
