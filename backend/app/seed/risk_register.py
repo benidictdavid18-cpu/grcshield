@@ -22,7 +22,6 @@ from app.services.risk_scoring import (
 )
 
 
-
 class AppetiteSpec(NamedTuple):
     category: RiskCategory
     max_acceptable_band: RiskBand

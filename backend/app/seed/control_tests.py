@@ -15,7 +15,6 @@ TEST-005, TEST-008 and TEST-011.
 from datetime import date
 from typing import NamedTuple
 
-
 TESTER_ENG = "Priya Raghavan, Security Engineer"
 TESTER_COMPLIANCE = "Marcus Whitfield, Compliance Analyst"
 REVIEWER_LEGAL = "Head of Legal & Compliance"

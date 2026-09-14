@@ -1,0 +1,142 @@
+name: CI
+
+# Four jobs, each proving a different claim the README makes.
+#
+#   backend   the 417 tests, the migration chain, and the static seed check
+#   frontend  the TypeScript build the compose file will serve
+#   lint      ruff on the backend, so a stray import or a bare re-raise is a red build
+#   compose   `docker compose up` followed by the end-to-end smoke test, which is the
+#             only place the compose file and the Dockerfiles are ever executed
+#
+# No job needs a secret. Nothing in the pipeline deploys anywhere.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Unit, API and migration tests
+        run: pytest -q
+      - name: Static seed-data integrity
+        working-directory: .
+        run: python scripts/check_seed_data.py
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff==0.8.4
+      - run: ruff check backend/app backend/tests scripts
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  dependencies:
+    name: Dependency audit (advisory)
+    runs-on: ubuntu-latest
+    # Advisory: the result is in the log, not in the badge. See SECURITY.md, "Known gaps".
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: pip install pip-audit
+      - name: Python dependencies
+        run: pip-audit -r backend/requirements.txt
+      - name: Node dependencies
+        working-directory: frontend
+        run: npm audit --audit-level=high
+
+  compose:
+    name: Compose up + smoke test
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    env:
+      # Ollama is not on the runner. The smoke test passes 79 checks without it and
+      # skips the four that exist to exercise the assistant.
+      AI_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # -f docker-compose.yml alone: the production-shaped stack, without the dev
+      # override. The API is reachable only through nginx, so the smoke test goes
+      # through the proxy too, which is the path a user takes.
+      - name: Validate both compose files
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+          docker compose config --quiet
+      - name: Build and start the stack
+        run: docker compose -f docker-compose.yml up --build --detach --wait --wait-timeout 240
+      - name: Show what came up
+        if: always()
+        run: docker compose -f docker-compose.yml ps
+      - name: Wait for the API to report seeded, through nginx
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:5173/api/health | grep -q '"seeded": *true'; then
+              echo "API is up and seeded"; exit 0
+            fi
+            sleep 3
+          done
+          echo "API never reported seeded"; exit 1
+      - name: The page is served with its own security headers
+        run: |
+          curl -sSI http://localhost:5173/ | tee /tmp/headers
+          grep -qi "content-security-policy" /tmp/headers
+          grep -qi "x-frame-options: DENY" /tmp/headers
+      - name: End-to-end smoke test through the proxy
+        run: python scripts/smoke_test.py --base-url http://localhost:5173/api
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.yml logs --no-color --tail 200
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml down --volumes

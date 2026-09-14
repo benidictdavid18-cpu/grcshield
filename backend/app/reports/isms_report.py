@@ -4,7 +4,6 @@ A records export, not one of the three reports. See the docstring on
 ``app.api.routes.isms.isms_records_pdf`` for why that distinction is kept.
 """
 
-from datetime import date
 from io import BytesIO
 
 from reportlab.lib import colors
@@ -22,6 +21,7 @@ from reportlab.platypus import (
     Spacer,
 )
 
+from app.core import clock
 from app.core.config import get_settings
 
 _INK = colors.HexColor("#1a1d24")
@@ -106,7 +106,7 @@ def render_isms_records(audits, reviews, nonconformities) -> bytes:
         _p(
             "FinFlow Technologies · ISO/IEC 27001:2022 Clauses 9.2 (internal audit), "
             f"9.3 (management review) and 10.2 (nonconformity and corrective action) · "
-            f"generated {date.today().isoformat()}",
+            f"generated {clock.today().isoformat()}",
             styles["subtitle"],
         ),
     ]

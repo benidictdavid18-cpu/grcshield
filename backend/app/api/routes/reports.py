@@ -1,11 +1,10 @@
-from datetime import date
 
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.routes.metrics import list_kris
-from app.services import executive as executive_service
+from app.core import clock
 from app.db.session import get_db
 from app.models.privacy import RiskException
 from app.models.risk import Risk, RiskAppetiteThreshold
@@ -13,6 +12,7 @@ from app.reports.executive_report import render_executive_summary
 from app.reports.registry import REPORTS
 from app.reports.risk_register_report import render_risk_register
 from app.schemas.report import ReportOut
+from app.services import executive as executive_service
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -44,7 +44,7 @@ def risk_register_pdf(db: Session = Depends(get_db)) -> Response:
     risks = db.scalars(select(Risk)).unique().all()
     thresholds = {t.category: t for t in db.scalars(select(RiskAppetiteThreshold)).all()}
     exceptions = db.scalars(select(RiskException)).all()
-    pdf = render_risk_register(risks, thresholds, exceptions, date.today())
+    pdf = render_risk_register(risks, thresholds, exceptions, clock.today())
     return Response(
         content=pdf,
         media_type="application/pdf",
@@ -58,7 +58,7 @@ def executive_summary_pdf(db: Session = Depends(get_db)) -> Response:
     # The service output is used directly rather than the serialised response model:
     # the renderer wants the TopRisk and Priority dataclasses, not dicts.
     pdf = render_executive_summary(
-        executive_service.build(db, date.today()), list_kris(db), date.today()
+        executive_service.build(db, clock.today()), list_kris(db), clock.today()
     )
     return Response(
         content=pdf,

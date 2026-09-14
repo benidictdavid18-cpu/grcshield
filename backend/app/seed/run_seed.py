@@ -11,13 +11,46 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
+from app.core.security import hash_password
 from app.db.session import SessionLocal
+from app.models.audit import (
+    AuditFinding,
+    ControlTest,
+    ControlTestEvidenceLink,
+    FindingRemediationLink,
+    InternalAudit,
+    ManagementReview,
+    Nonconformity,
+)
 from app.models.framework import (
     ControlMapping,
     Framework,
     FrameworkControl,
     MappingRelationship,
     ScopeStatus,
+)
+from app.models.kri import (
+    KriDefinition,
+    KriDirection,
+    KriMeasurement,
+    KriUnit,
+    MeasurementFrequency,
+)
+from app.models.privacy import (
+    Asset,
+    BiaAssetLink,
+    BiaControlLink,
+    BiaRiskLink,
+    BusinessImpactAnalysis,
+    Dpia,
+    DpiaAssetLink,
+    DpiaRiskLink,
+    RiskException,
+    RopaAssetLink,
+    RopaControlLink,
+    RopaEntry,
+    RopaRiskLink,
 )
 from app.models.risk import (
     Control,
@@ -40,15 +73,39 @@ from app.models.soa import (
     SoARemediationLink,
     SoARiskLink,
 )
-from app.models.audit import (
-    AuditFinding,
-    ControlTest,
-    ControlTestEvidenceLink,
-    FindingRemediationLink,
-    InternalAudit,
-    ManagementReview,
-    Nonconformity,
+from app.models.user import Role, User
+from app.seed.annex_a_2022 import (
+    ANNEX_A_CONTROLS,
+    PROVISIONAL_EXCLUSIONS,
+    THEME_TITLES,
 )
+from app.seed.asset_register import ASSETS
+from app.seed.continuity_register import BIA_PROCESSES
+from app.seed.control_tests import (
+    AUDIT_FINDINGS,
+    CONTROL_TESTS,
+    INTERNAL_AUDITS,
+    MANAGEMENT_REVIEWS,
+    NONCONFORMITIES,
+)
+from app.seed.evidence_register import EVIDENCE
+from app.seed.exception_register import RISK_EXCEPTIONS
+from app.seed.internal_controls import EFFECTIVENESS, INTERNAL_CONTROLS
+from app.seed.iso_soc2_mappings import ISO_TO_SOC2
+from app.seed.kri_register import KRI_DEFINITIONS
+from app.seed.privacy_register import DPIAS, ROPA_ENTRIES
+from app.seed.remediation_register import REMEDIATION_ITEMS
+from app.seed.risk_register import APPETITE_THRESHOLDS, RISKS
+from app.seed.soa_register import (
+    SOA_APPROVED_BY,
+    SOA_APPROVED_DATE,
+    SOA_ENTRIES,
+    SOA_LAST_REVIEWED,
+    SOA_NEXT_REVIEW,
+    SOA_VERSION,
+)
+from app.seed.soc2_tsc import ELECTED_CATEGORIES, TSC_CRITERIA
+from app.seed.users import DEMO_USERS
 from app.services.control_testing import (
     CONCLUSION_TO_OPERATING,
     AuditStatus,
@@ -65,37 +122,6 @@ from app.services.control_testing import (
     validate_effectiveness,
     validate_test,
 )
-from app.models.privacy import (
-    Asset,
-    BiaAssetLink,
-    BiaControlLink,
-    BiaRiskLink,
-    BusinessImpactAnalysis,
-    Dpia,
-    DpiaAssetLink,
-    DpiaRiskLink,
-    RiskException,
-    RopaAssetLink,
-    RopaControlLink,
-    RopaEntry,
-    RopaRiskLink,
-)
-from app.core.config import get_settings
-from app.core.security import hash_password
-from app.models.kri import (
-    KriDefinition,
-    KriDirection,
-    KriMeasurement,
-    KriUnit,
-    MeasurementFrequency,
-)
-from app.models.user import Role, User
-from app.seed.asset_register import ASSETS
-from app.seed.kri_register import KRI_DEFINITIONS
-from app.seed.users import DEMO_USERS
-from app.seed.continuity_register import BIA_PROCESSES
-from app.seed.exception_register import RISK_EXCEPTIONS
-from app.seed.privacy_register import DPIAS, ROPA_ENTRIES
 from app.services.privacy_continuity import (
     AssetType,
     Classification,
@@ -110,32 +136,6 @@ from app.services.privacy_continuity import (
     validate_ropa,
 )
 from app.services.soa_validation import entry_errors
-from app.seed.annex_a_2022 import (
-    ANNEX_A_CONTROLS,
-    PROVISIONAL_EXCLUSIONS,
-    THEME_TITLES,
-)
-from app.seed.control_tests import (
-    AUDIT_FINDINGS,
-    CONTROL_TESTS,
-    INTERNAL_AUDITS,
-    MANAGEMENT_REVIEWS,
-    NONCONFORMITIES,
-)
-from app.seed.evidence_register import EVIDENCE
-from app.seed.internal_controls import EFFECTIVENESS, INTERNAL_CONTROLS
-from app.seed.iso_soc2_mappings import ISO_TO_SOC2
-from app.seed.remediation_register import REMEDIATION_ITEMS
-from app.seed.risk_register import APPETITE_THRESHOLDS, RISKS
-from app.seed.soa_register import (
-    SOA_APPROVED_BY,
-    SOA_APPROVED_DATE,
-    SOA_ENTRIES,
-    SOA_LAST_REVIEWED,
-    SOA_NEXT_REVIEW,
-    SOA_VERSION,
-)
-from app.seed.soc2_tsc import ELECTED_CATEGORIES, TSC_CRITERIA
 
 ISO_CODE = "ISO27001_2022"
 SOC2_CODE = "SOC2_TSC"

@@ -17,7 +17,6 @@ are the author's to write.
 from datetime import date
 from typing import NamedTuple
 
-
 ENG = "Head of Engineering"
 LEGAL = "Head of Legal & Compliance"
 PEOPLE = "Head of People"

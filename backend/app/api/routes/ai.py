@@ -43,11 +43,11 @@ from app.models.soa import SoAEntry
 from app.models.user import User
 from app.schemas.ai import (
     AiEnvelope,
-    ConsistencySweepIn,
-    ConsistencySweepOut,
     AiInteractionOut,
     AiInteractionSummaryOut,
     AiStatusOut,
+    ConsistencySweepIn,
+    ConsistencySweepOut,
     ContextItemOut,
     ControlMappingIn,
     ControlMappingOut,
@@ -86,8 +86,8 @@ from app.services.ai.response import (
 from app.services.ai.service import (
     ADVISORY_LABEL,
     ADVISORY_NOTE,
-    AIService,
     AiResult,
+    AIService,
     check_control_refs,
     check_record_refs,
     get_ai_service,
@@ -152,13 +152,13 @@ def _run(
             question=question,
         )
     except AiDisabled as exc:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
     except AiUnavailable as exc:
         # Covers a stopped Ollama, a missing model and a timeout. Every one of them
         # means the same thing to the caller, and none of them is this service's fault.
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
     except InvalidAiResponse as exc:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
 
 
 def _envelope(result: AiResult) -> dict:
@@ -203,7 +203,7 @@ def risk_assist(
     try:
         record = ai_context.risk_context(db, payload.risk_ref)
     except ai_context.ContextNotFound as exc:
-        raise _not_found(exc)
+        raise _not_found(exc) from exc
 
     result = _run(
         service,
@@ -238,7 +238,7 @@ def risk_description(
         try:
             record = ai_context.risk_context(db, payload.risk_ref)
         except ai_context.ContextNotFound as exc:
-            raise _not_found(exc)
+            raise _not_found(exc) from exc
     elif payload.has_free_text():
         record = _draft_context(payload)
     else:
@@ -323,7 +323,7 @@ def control_mapping(
         record, catalogue = ai_context.control_mapping_context(db, payload.risk_ref)
         risk = ai_context.load_risk(db, payload.risk_ref)
     except ai_context.ContextNotFound as exc:
-        raise _not_found(exc)
+        raise _not_found(exc) from exc
 
     result = _run(
         service,
@@ -410,7 +410,7 @@ def control_test_assist(
     try:
         record = ai_context.control_test_context(db, payload.test_ref)
     except ai_context.ContextNotFound as exc:
-        raise _not_found(exc)
+        raise _not_found(exc) from exc
 
     result = _run(
         service,
@@ -446,7 +446,7 @@ def finding_draft(
     try:
         record = ai_context.finding_draft_context(db, payload.test_ref)
     except ai_context.ContextNotFound as exc:
-        raise _not_found(exc)
+        raise _not_found(exc) from exc
 
     result = _run(
         service,
@@ -480,7 +480,7 @@ def remediation_assist(
     try:
         record = ai_context.remediation_context(db, payload.finding_ref)
     except ai_context.ContextNotFound as exc:
-        raise _not_found(exc)
+        raise _not_found(exc) from exc
 
     result = _run(
         service,
@@ -590,7 +590,7 @@ def consistency_sweep(
     try:
         record, supplied = ai_context.consistency_context(db, payload.control_id)
     except ai_context.ContextNotFound as exc:
-        raise _not_found(exc)
+        raise _not_found(exc) from exc
 
     result = _run(
         service,

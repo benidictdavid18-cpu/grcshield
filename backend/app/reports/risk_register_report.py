@@ -29,8 +29,8 @@ from app.reports.common import (
     BAD_BG,
     HEADER_BG,
     RULE,
-    page_furniture,
     p,
+    page_furniture,
     styles,
 )
 from app.services.privacy_continuity import ExceptionStatus, exception_state

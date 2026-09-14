@@ -8,15 +8,6 @@ from app.services.control_testing import (
     DesignEffectiveness as Design,
 )
 from app.services.control_testing import (
-    OperatingEffectiveness as Operating,
-)
-from app.services.control_testing import (
-    SampleSelectionMethod as Method,
-)
-from app.services.control_testing import (
-    TestConclusion as Conclusion,
-)
-from app.services.control_testing import (
     FindingSeverity,
     basis_is_optimistic,
     basis_supported_by_control,
@@ -25,6 +16,15 @@ from app.services.control_testing import (
     strongest_supported_basis,
     validate_effectiveness,
     validate_test,
+)
+from app.services.control_testing import (
+    OperatingEffectiveness as Operating,
+)
+from app.services.control_testing import (
+    SampleSelectionMethod as Method,
+)
+from app.services.control_testing import (
+    TestConclusion as Conclusion,
 )
 from app.services.risk_scoring import ControlEffectivenessBasis as Basis
 

@@ -23,7 +23,6 @@ from app.models.risk import Risk, RiskAppetiteThreshold
 from app.models.soa import (
     ImplementationStatus,
     RemediationItem,
-    RemediationStatus,
     SoAEntry,
 )
 from app.services.control_testing import FindingSeverity

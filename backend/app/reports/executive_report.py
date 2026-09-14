@@ -28,8 +28,8 @@ from app.reports.common import (
     GOOD_BG,
     HEADER_BG,
     RULE,
-    page_furniture,
     p,
+    page_furniture,
     styles,
 )
 

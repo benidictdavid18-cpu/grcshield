@@ -18,8 +18,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 from app.seed.annex_a_2022 import ANNEX_A_CONTROLS, PROVISIONAL_EXCLUSIONS  # noqa: E402
 from app.seed.asset_register import ASSETS  # noqa: E402
 from app.seed.continuity_register import BIA_PROCESSES  # noqa: E402
-from app.seed.exception_register import RISK_EXCEPTIONS  # noqa: E402
-from app.seed.privacy_register import DPIAS, ROPA_ENTRIES  # noqa: E402
 from app.seed.control_tests import (  # noqa: E402
     AUDIT_FINDINGS,
     CONTROL_TESTS,
@@ -28,8 +26,10 @@ from app.seed.control_tests import (  # noqa: E402
     NONCONFORMITIES,
 )
 from app.seed.evidence_register import EVIDENCE  # noqa: E402
+from app.seed.exception_register import RISK_EXCEPTIONS  # noqa: E402
 from app.seed.internal_controls import EFFECTIVENESS, INTERNAL_CONTROLS  # noqa: E402
 from app.seed.iso_soc2_mappings import ISO_TO_SOC2  # noqa: E402
+from app.seed.privacy_register import DPIAS, ROPA_ENTRIES  # noqa: E402
 from app.seed.remediation_register import REMEDIATION_ITEMS  # noqa: E402
 from app.seed.risk_register import APPETITE_THRESHOLDS, RISKS  # noqa: E402
 

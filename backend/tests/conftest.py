@@ -16,6 +16,10 @@ import os
 # Must be set before app.core.config is imported -- the settings object is cached and
 # the engine is constructed at import time from whatever URL it sees.
 os.environ["DATABASE_URL"] = "sqlite+pysqlite:///:memory:"
+# The seed is a snapshot of FinFlow as of this date, and the assertions below describe
+# that snapshot: EXC-001 is expiring soon, not expired; one acceptance has lapsed, not
+# two. Pinned so the suite does not start failing on the day a seeded date passes.
+os.environ["AS_OF_DATE"] = "2026-09-04"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

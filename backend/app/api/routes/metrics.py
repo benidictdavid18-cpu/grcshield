@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core import clock
 from app.db.session import get_db
 from app.models.kri import KriBand, KriDefinition, KriDirection, KriUnit, MeasurementFrequency
 from app.services import executive as executive_service
@@ -69,7 +70,7 @@ def list_kris(db: Session = Depends(get_db)) -> list[KriOut]:
     end. The current point is computed from the registers on this request, so the
     dashboard cannot drift away from the data behind it.
     """
-    today = date.today()
+    today = clock.today()
     definitions = db.scalars(
         select(KriDefinition)
         .options(selectinload(KriDefinition.measurements))
@@ -188,4 +189,4 @@ class ExecutiveSummaryOut(BaseModel):
 @router.get("/executive-summary", response_model=ExecutiveSummaryOut)
 def executive_summary(db: Session = Depends(get_db)) -> ExecutiveSummaryOut:
     """The board view: same numbers, no jargon, no control identifiers in the prose."""
-    return ExecutiveSummaryOut(**executive_service.build(db, date.today()))
+    return ExecutiveSummaryOut(**executive_service.build(db, clock.today()))

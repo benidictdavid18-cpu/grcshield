@@ -1,3 +1,4 @@
+from datetime import date
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,11 +18,23 @@ class Settings(BaseSettings):
     )
 
     database_url: str = "postgresql+psycopg://grcshield:grcshield@db:5432/grcshield"
+
+    # Pins the business date every register is evaluated against (see core/clock.py).
+    # Unset means the real calendar. The demo pins it so the seed snapshot -- an
+    # acceptance expiring soon, three expired evidence artifacts -- stays the snapshot
+    # the README describes instead of drifting as the calendar moves on.
+    as_of_date: date | None = None
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     # Overridden by JWT_SECRET in any real deployment. The default exists so the demo
     # starts without configuration; it is not a secret and is not treated as one.
     jwt_secret: str = "dev-only-not-a-secret-change-me"
+
+    # Failed logins allowed per (client address, username) inside the window before
+    # /auth/token answers 429. Ten in a minute is generous for a person and hopeless
+    # for a dictionary. See core/rate_limit.py.
+    auth_failure_limit: int = 10
+    auth_failure_window_seconds: int = 60
 
     # Demo credentials, published in the README on purpose. Sourced from settings so a
     # deployment can change them without touching seed code.

@@ -19,11 +19,11 @@ shape carries the list of what was included — which is what the UI renders und
 """
 
 from dataclasses import dataclass, field
-from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core import clock
 from app.models.audit import AuditFinding, ControlTest, ControlTestEvidenceLink
 from app.models.framework import Framework, FrameworkControl
 from app.models.privacy import (
@@ -822,7 +822,7 @@ def sweep_candidates(db: Session) -> list[SweepCandidate]:
     bia_links = db.scalars(select(BiaControlLink)).all()
     findings = db.scalars(select(AuditFinding)).all()
     evidence = db.scalars(select(Evidence)).all()
-    today = date.today()
+    today = clock.today()
 
     candidates: list[SweepCandidate] = []
     for control in controls:
