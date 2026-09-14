@@ -203,11 +203,30 @@ The same numbers, for a reader who does not know what Annex A is.
 
 ![Executive summary](docs/screenshots/executive.png)
 
+### A write the API refuses
+
+Signed in as the ISMS manager on RISK-019, where every linked control is untested.
+Claim a reduction below inherent and the API refuses it in its own words. Nothing is
+validated in the browser; the form submits and shows what came back.
+
+![The API refusing a residual re-score on RISK-019](docs/screenshots/refusal.png)
+
+### Change history
+
+RISK-004 re-scored and put back. Two events, the actor on each, and the values before
+and after — readable by the auditor account, which is who it is for.
+
+![Change history on RISK-004 with the before/after values open](docs/screenshots/change-history.png)
+
 Regenerate them from a running instance with:
 
 ```bash
 python scripts/capture_screenshots.py --base-url http://localhost:5173
 ```
+
+The last two are taken as the ISMS manager and the second of them writes to the
+register (and restores it), so point the script at a scratch database rather than one
+whose trail you want to keep.
 
 ---
 

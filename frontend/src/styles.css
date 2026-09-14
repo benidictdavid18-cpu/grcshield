@@ -2238,7 +2238,13 @@ button.card-link {
   border-collapse: collapse;
   font-size: 0.8rem;
   margin-top: 0.5rem;
+  table-layout: fixed;
   width: 100%;
+}
+
+/* Before and after get equal room; a long justification should not squeeze the other. */
+.history-diff th:first-child {
+  width: 22%;
 }
 
 .history-diff th,
