@@ -1,0 +1,35 @@
+# Development overrides, applied automatically by `docker compose up`.
+#
+# Vite serves the source with hot reload, the backend directory is bind-mounted so an
+# edit is live on the next request, and the API and database are published on
+# localhost so /docs and a psql shell are a browser tab away. None of this belongs in
+# the base file: a bind mount and a published database port are development
+# conveniences, not deployment decisions.
+
+services:
+  db:
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  api:
+    environment:
+      # Published directly, so a caller could set X-Forwarded-For itself. Do not
+      # believe it.
+      FORWARDED_ALLOW_IPS: ""
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      target: dev
+    environment:
+      VITE_API_TARGET: http://api:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    # !override replaces the base mapping (5173 -> nginx:80) instead of adding to it,
+    # which would try to bind host port 5173 twice.
+    ports: !override
+      - "5173:5173"

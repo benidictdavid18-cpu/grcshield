@@ -1,9 +1,19 @@
+# The production-shaped stack: a static bundle behind nginx, the API reachable only
+# through that proxy, PostgreSQL not published at all.
+#
+#   docker compose -f docker-compose.yml up --build     this file alone
+#   docker compose up --build                            this file + the dev override
+#
+# Without -f, Compose also applies docker-compose.override.yml, which turns this into
+# the development stack: Vite with hot reload, the source bind-mounted, the API and
+# the database published on localhost. CI runs this file alone.
+
 services:
   db:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: grcshield
-      POSTGRES_PASSWORD: grcshield
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-grcshield}
       POSTGRES_DB: grcshield
     volumes:
       - grcshield-db:/var/lib/postgresql/data
@@ -12,17 +22,23 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
-    ports:
-      - "5432:5432"
 
   api:
     build: ./backend
     environment:
-      DATABASE_URL: postgresql+psycopg://grcshield:grcshield@db:5432/grcshield
-      ENVIRONMENT: development
+      DATABASE_URL: postgresql+psycopg://grcshield:${POSTGRES_PASSWORD:-grcshield}@db:5432/grcshield
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      # The seed is a snapshot of FinFlow as of this date. Pinned so the demo keeps
+      # showing what the README describes (an acceptance expiring soon, three expired
+      # evidence artifacts) instead of drifting as the calendar moves. Unset it for
+      # a live deployment; see backend/app/core/clock.py.
+      AS_OF_DATE: ${AS_OF_DATE:-2026-09-04}
       # Demo default. Any real deployment must override this — the app logs a warning
       # on startup if it is still in use outside development.
       JWT_SECRET: ${JWT_SECRET:-dev-only-not-a-secret-change-me}
+      # Nothing but the web container can reach this service, so its X-Forwarded-For
+      # can be believed. The dev override publishes :8000 and clears this.
+      FORWARDED_ALLOW_IPS: "*"
       # The AI assistant is optional and off unless Ollama is actually reachable.
       # Ollama runs on the host, not in this network, so the container has to reach
       # back out to it. Set AI_ENABLED=false to switch the feature off entirely; the
@@ -37,10 +53,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
-    ports:
-      - "8000:8000"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
       interval: 10s
@@ -49,16 +61,14 @@ services:
       start_period: 30s
 
   web:
-    build: ./frontend
-    environment:
-      VITE_API_TARGET: http://api:8000
+    build:
+      context: ./frontend
+      target: serve
     depends_on:
-      - api
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      api:
+        condition: service_healthy
     ports:
-      - "5173:5173"
+      - "5173:80"
 
 volumes:
   grcshield-db:
