@@ -1,5 +1,7 @@
 # GRCShield
 
+[![CI](https://github.com/benidictdavid18-cpu/grcshield/actions/workflows/ci.yml/badge.svg)](https://github.com/benidictdavid18-cpu/grcshield/actions/workflows/ci.yml)
+
 A Governance, Risk and Compliance platform for **FinFlow Technologies**, a fictional
 cloud-native FinTech startup preparing for ISO/IEC 27001:2022 certification.
 
@@ -84,7 +86,7 @@ flowchart LR
         AISVC["ai/service.py<br/>context · prompts · guardrails"]
         PROV["AiProvider<br/>abstraction"]
     end
-    DB[("PostgreSQL 16<br/>7 Alembic migrations")]
+    DB[("PostgreSQL 16<br/>9 Alembic migrations")]
     OLLAMA["Ollama<br/>local model server"]
 
     UI -- "Bearer token" --> AUTH
@@ -118,6 +120,10 @@ docker compose up --build
 - **API** — http://localhost:8000 (OpenAPI docs at `/docs`)
 - **Health** — http://localhost:8000/health
 
+That is the development stack: `docker-compose.yml` plus the `docker-compose.override.yml`
+Compose applies automatically — Vite with hot reload, the backend bind-mounted, the API
+and PostgreSQL published on localhost.
+
 The API container runs migrations and seeds reference data on start. Seeding is
 idempotent, so restarting against an existing volume is safe.
 
@@ -126,6 +132,22 @@ Clean slate:
 ```bash
 docker compose down -v && docker compose up --build
 ```
+
+### The production-shaped stack
+
+```bash
+docker compose -f docker-compose.yml up --build
+```
+
+The base file alone: the frontend built once and served by nginx as a static bundle with
+its own CSP; the API reachable only through nginx at `/api`, running as a non-root
+user; PostgreSQL not published at all. This is what CI builds and runs the smoke test
+against, through the proxy: `scripts/smoke_test.py --base-url http://localhost:5173/api`.
+
+Because nothing but the proxy can reach the API in this shape, the API is told to
+believe `X-Forwarded-For` (`FORWARDED_ALLOW_IPS=*`), which is what keeps the login
+throttle keyed on the real client rather than on the proxy. The dev override publishes
+`:8000` and clears that setting, so a direct caller cannot spoof the header.
 
 ### Demo credentials
 
@@ -140,6 +162,16 @@ sign-in screen offers both as one-click fills.
 **Start with the auditor account.** It can read every register and is refused with `403`
 on every write path — which is only meaningful because unauthenticated reads are refused
 outright.
+
+**Then sign in as the ISMS manager and try to break a rule.** The risk detail page gains a
+*Re-score residual risk* panel and the SoA drawer an *Edit this entry* panel. Open
+RISK-019, claim a reduction, and the API refuses it in its own words — every linked
+control is untested, so no reduction may be credited. Open A.8.13, set it to partially
+implemented, and the refusal names a field the form does not even show:
+`linked_remediation_ids`, because a gap needs a remediation item. Nothing is validated in
+the browser; the form submits and shows what the API said. Every write that succeeds
+appears in the record's *Change history* with the actor and the before/after values,
+which the auditor account can read.
 
 ---
 
@@ -200,6 +232,7 @@ python scripts/capture_screenshots.py --base-url http://localhost:5173
 | KRIs | 7 | Computed live, six-month trend |
 | Reports | 3 | PDF, plus an ISMS records export |
 | AI assistants | 8 | Local, advisory, and unable to change any of the above |
+| Audit trail | every write | Actor, record, before and after, in the same transaction as the change |
 
 ---
 
@@ -248,8 +281,8 @@ consistency sweep, and it is the feature to look at first.
 
 **The whole feature is optional.** With `AI_ENABLED=false`, or with Ollama simply not
 running, every register, report, validation rule and screen behaves exactly as it does
-without it. That is asserted rather than asserted-to: the smoke test passes 69 checks
-with Ollama running and 65 with it stopped, and the difference is only the checks that
+without it. That is asserted rather than asserted-to: the smoke test passes 83 checks
+with Ollama running and 79 with it stopped, and the difference is only the checks that
 exist to test the assistant itself.
 
 ### What the AI is doing
@@ -459,16 +492,33 @@ review. Keeping inference local removes the question rather than answering it.
 ## Verification
 
 ```bash
-# 386 tests — rules, API contracts, the migration chain, and the AI layer
+# 417 tests — rules, API contracts, the migration chain, the audit trail, hardening, and the AI layer
 cd backend && pytest -q
+
+# Lint: import order, unused imports, bare re-raises
+ruff check backend/app backend/tests scripts
+
+# Frontend: lint, then the API client's handling of a refusal and the form that shows it
+cd frontend && npm run lint && npm test
 
 # Static integrity checks across every register, no database needed
 python scripts/check_seed_data.py
 
-# 65 end-to-end checks against a running instance, including the RISK-004 chain
-# (69 when Ollama is running — the extra four exercise the assistant)
+# 79 end-to-end checks against a running instance, including the RISK-004 chain
+# (83 when Ollama is running — the extra four exercise the assistant)
 python scripts/smoke_test.py --base-url http://localhost:8000
 ```
+
+All four run on every push; the badge at the top is the result. The compose job is the
+one place the Dockerfiles are actually executed: it builds the stack on a clean runner,
+waits for `/health` to report the schema seeded, and runs the smoke test against
+PostgreSQL rather than SQLite.
+
+**The business date is pinned.** Evidence validity, acceptance expiry and remediation
+deadlines are all judged against `AS_OF_DATE` (default `2026-09-04` in the demo and the
+tests, unset for a live deployment). Without it the seed snapshot changes shape as the
+calendar moves — EXC-001 flipped from *expiring soon* to *expired* on 5 September and
+took three tests with it, none of which had changed. See `backend/app/core/clock.py`.
 
 The AI tests never contact Ollama. The provider boundary exists so a stub can answer
 instead, which is also the only way to test the cases that matter: a model returning
@@ -481,7 +531,7 @@ mapping on an excluded control, RISK-004's impact staying at 5 while likelihood 
 auditor receiving 403 on every write path, and no control identifier leaking into board
 prose.
 
-`tests/test_migrations.py` runs all eight migrations empty → head, downgrades back to base
+`tests/test_migrations.py` runs all nine migrations empty → head, downgrades back to base
 leaving nothing behind, and compares the resulting schema against the model metadata — so
 a model change with no matching migration fails the build. That check found nine indexes
 present in migrations and absent from the models.
@@ -492,25 +542,33 @@ present in migrations and absent from the models.
 
 ```
 backend/
-  alembic/versions/     8 migrations
+  alembic/versions/     9 migrations
   app/
     api/routes/         auth, frameworks, risks, soa, testing, isms, privacy, metrics,
-                        reports, ai
+                        reports, ai, audit_trail
     core/               settings, password hashing, JWT
     db/                 declarative base, session
     models/             frameworks, controls, risks, SoA, evidence, audit, privacy, KRI,
-                        users, ai
+                        users, ai, audit_trail
     reports/            registry, and the three report renderers
     schemas/            pydantic request and response models
     seed/               every register, plus the loader that validates them
     services/           risk_scoring, soa_validation, control_testing, privacy_continuity,
-                        kri_engine, executive
+                        kri_engine, executive, audit_trail
       ai/               provider, ollama, context, prompts, response, guardrails, service
-  tests/                386 tests
+  tests/                417 tests
 frontend/
+  Dockerfile            three stages: dev (Vite), build, serve (nginx)
+  nginx.conf            static bundle, /api proxy, the page's own security headers
   src/pages/            dashboard, executive, risks, soa, testing, isms, registers, …
+  src/pages/ResidualForm.tsx, SoAEditForm.tsx
+                        the two write forms; each shows the API's refusal by field
+  src/editing.tsx       submit hook, field errors, and the change-history panel
   src/ai.ts             the assistant's API client
   src/AiAssistant.tsx   the assistant panel and the masthead status chip
+docker-compose.yml      the production-shaped stack; CI runs this file alone
+docker-compose.override.yml
+                        development conveniences, applied automatically
 scripts/
   check_seed_data.py    static integrity checks
   smoke_test.py         end-to-end verification against a live instance
@@ -555,12 +613,13 @@ plausible.
 
 ## Known limitations
 
-- **`docker compose up` has not been executed.** Docker Desktop crashes at startup on the
-  development machine with an unrelated fault. Everything is verified against SQLite
-  instead — 386 tests, the migration chain end to end, and 65 smoke checks against a live
-  server (69 with Ollama running). The compose file and Dockerfiles are written but unproven, and PostgreSQL-specific
-  DDL (native `ENUM` creation in particular) is unexercised.
-- **No rate limiting, account lockout, password reset, or audit log of user actions.** See
+- **`docker compose up` is verified in CI, not on the development machine.** Docker
+  Desktop crashes at startup there with an unrelated fault, so the compose file and the
+  Dockerfiles are exercised by the `compose` job in
+  [`.github/workflows/ci.yml`](.github/workflows/ci.yml): build, start, wait for
+  `/health` to report seeded, run the 79 smoke checks against PostgreSQL, tear down.
+  Locally, everything is verified against SQLite.
+- **No account lockout, password reset, or MFA on this application.** See
   [SECURITY.md](SECURITY.md) for the complete list and the reasoning.
 - **The assistant is only as good as the model behind it.** Verified end to end against
   Ollama 0.14.2 with `llama3.2:3b`. The risk, testing, finding and remediation assistants

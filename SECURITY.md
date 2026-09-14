@@ -23,6 +23,11 @@ plainly what it does not do.
 - `verify_password` fails **closed** on a malformed stored hash rather than raising, so a
   corrupted record produces a normal 401 rather than a 500 that confirms the account
   exists.
+- **Passwords over 72 bytes are refused**, at hash time and at verify time. bcrypt reads
+  the first 72 bytes and silently ignores the rest — checked against the installed
+  package: a 73-byte password verifies against a 72-byte hash — so a longer password
+  would be stored and checked as something shorter than the user typed.
+  `test_a_password_longer_than_72_bytes_never_verifies` holds the line.
 
 A test asserts every stored hash begins `$2b$12$` and contains no plaintext
 ([`tests/test_auth_api.py`](backend/tests/test_auth_api.py)).
@@ -55,8 +60,25 @@ project is one 8-hour token and a re-login.
 ### Username enumeration
 
 Unknown username, wrong password and deactivated account all return the identical 401 with
-the identical message. Parametrised test:
-`test_bad_credentials_all_return_the_same_401`.
+the identical message (`test_bad_credentials_all_return_the_same_401`) — **and in the
+same time**. An unknown username used to short-circuit before bcrypt ran, which made the
+401 uniform in body and distinguishable by clock. The unknown-user path now spends one
+comparison against a fixed dummy hash (`burn_a_verification`), so both paths cost one
+bcrypt. `test_an_unknown_username_costs_a_bcrypt_comparison` asserts the call; a coarse
+timing test asserts the two paths are within a factor of two of each other.
+
+### Failed-login throttling
+
+`/auth/token` counts **failures** per (client address, username) inside a sliding window —
+ten in sixty seconds by default, `AUTH_FAILURE_LIMIT` and `AUTH_FAILURE_WINDOW_SECONDS` —
+and answers `429` with a `Retry-After` once the limit is reached. A successful login
+clears the count. The correct password is refused too while the window is open; a limit
+that lifts for the right guess is not a limit.
+
+Keyed on the pair, not either half: by address alone, one attacker behind a NAT locks out
+everyone behind it; by username alone, an attacker can lock a victim out on purpose. The
+tracker is in-process, so it resets on restart and is per-worker under a multi-process
+server — stated under Known gaps. ([`app/core/rate_limit.py`](backend/app/core/rate_limit.py))
 
 ## Authorisation
 
@@ -177,8 +199,25 @@ Database credentials in `docker-compose.yml` are likewise demo values.
 
 The application serves plain HTTP. TLS is expected to terminate at a reverse proxy or load
 balancer in front of it, which is the normal arrangement for a containerised service. No
-HSTS or secure-cookie handling exists in the app because it issues no cookies — the token
-lives in `sessionStorage` and travels in an `Authorization` header.
+secure-cookie handling exists in the app because it issues no cookies — the token lives
+in `sessionStorage` and travels in an `Authorization` header.
+
+### Response headers
+
+Every API response carries `Content-Security-Policy: default-src 'none'; frame-ancestors
+'none'`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy:
+no-referrer` and `Cache-Control: no-store`
+([`app/core/headers.py`](backend/app/core/headers.py)). A JSON body has nothing to load,
+so the strictest policy is the right one; the interactive documentation at `/docs` and
+`/redoc` gets a policy that allows exactly the CDN it loads from.
+`Strict-Transport-Security` is added only when `ENVIRONMENT` is not `development` —
+over plain HTTP it is meaningless, and from a local demo it would pin the developer's
+browser to HTTPS on localhost for a year.
+
+These headers cover the API. The single-page application has its own, set by the nginx
+container that serves it ([`frontend/nginx.conf`](frontend/nginx.conf)):
+`script-src 'self'` with no inline scripts, `frame-ancestors 'none'`, `base-uri 'self'`,
+`form-action 'self'`. In development Vite serves the page without them.
 
 `sessionStorage` rather than `localStorage` is deliberate: the token dies with the browser
 tab rather than persisting on a shared machine. It remains readable by JavaScript, which
@@ -186,14 +225,36 @@ matters — see the XSS entry under known gaps.
 
 ## Audit logging
 
-**Application logging is request-level only** (uvicorn access logs). There is no record of
-*who* changed *what*.
+**Every mutation through the API writes an event to `audit_events`**: who (username and
+role), when, which record (by business reference — RISK-004, A.8.5, TEST-013), the
+changed fields before and after as JSON, and a one-sentence summary. The trail answers
+the question an auditor asks first when a number on the register has moved: *who lowered
+this residual score, when, and from what?*
 
-Every record in the domain model carries `created_at` and `updated_at`, and the ISMS
-records themselves carry authorship — `tester`, `reviewed_by`, `approved_by`,
-`identified_by`, `assessed_by`. So the ISMS content is attributable. The *application's own
-audit trail* is not, and for a real GRC tool that would be a significant omission: an
-auditor would reasonably ask who lowered a residual score and when.
+Properties that make it worth trusting:
+
+- **Same transaction as the change.** `services/audit_trail.record_change` adds the event
+  to the session; the route commits both together. A `422` that rolls the change back
+  rolls the event back with it. `test_a_refused_write_leaves_no_event` asserts this.
+- **A cascade is recorded as what it is.** Recording a workpaper with exceptions creates a
+  finding, a remediation item, and re-rates the control. The trail carries one event for
+  the test naming what it raised, and a second for the control's rating change pointing
+  back at the test that implied it.
+- **Append-only by construction.** The only endpoint under `/audit-events` is a filtered
+  `GET`, and `test_no_endpoint_can_edit_or_remove_an_event` walks the route table to keep
+  it that way. The read-only auditor role can read the trail — that is who it is for.
+- **Actor stored as text**, not a foreign key, so the trail stays readable after the
+  account is deactivated. Same reasoning as the AI interaction log.
+- **A no-op edit is not an event.** Re-submitting an SoA entry with the same values
+  records nothing; a trail full of "changed nothing" entries hides the ones that matter.
+
+What it does not do: nothing at the database level stops a DBA from editing the table.
+Tamper-evidence (hash chaining, or shipping events to a write-once store) is the next
+step for a production deployment and is listed under Known gaps.
+
+Application logging otherwise remains request-level (uvicorn access logs). The ISMS
+content records carry their own authorship — `tester`, `reviewed_by`, `approved_by`,
+`identified_by`, `assessed_by` — independent of the application trail.
 
 ---
 
@@ -256,25 +317,33 @@ pretending it is complete.
 
 | Gap | Consequence | Why it is absent |
 | --- | --- | --- |
-| **No rate limiting** | `/auth/token` can be brute-forced. bcrypt cost 12 slows it but does not stop it. | Phase 1 explicitly removed rate-limiting middleware as scope. Would be the first thing added. |
+| **Login throttling is in-process** | The failure counter resets on restart and is per-worker under a multi-process server, so a determined attacker gets N guesses per worker per window. | The limit exists and is tested. A shared store (Redis) is the production step. |
 | **No account lockout** | Same. No backoff after repeated failures. | Out of scope. |
 | **No password reset or rotation** | Passwords are set at seed time only. No expiry, no complexity policy, no history. | No mail path in a demo. |
 | **No MFA on this application** | Ironic given RISK-004. Single factor only. | Out of scope. |
-| **No audit log of user actions** | Cannot answer "who changed this residual score?". | The most significant gap for a tool of this kind. |
-| **No security headers middleware** | No CSP, `X-Frame-Options`, `Referrer-Policy` or HSTS. | Expected at the proxy; not implemented. |
-| **XSS exposure is untested** | React escapes by default and no `dangerouslySetInnerHTML` is used, but the token is JS-readable, so a successful XSS would yield it. | No CSP, no `HttpOnly` cookie alternative. |
+| **Audit trail is not tamper-evident** | A database administrator could edit or delete `audit_events` rows and nothing would notice. | The trail itself exists (see Audit logging). Hash chaining or a write-once sink is the production step. |
+| **XSS exposure is untested** | React escapes by default and no `dangerouslySetInnerHTML` is used, but the token is JS-readable, so a successful XSS would yield it. | The nginx container sets a CSP on the page (`script-src 'self'`, no inline scripts), which blocks the injected-script form of XSS; the Vite dev server sets none. No `HttpOnly` cookie alternative. |
 | **No CSRF protection** | Not currently exploitable — auth is a bearer header, not a cookie, so a cross-site form cannot authenticate. Would become necessary the moment cookies were introduced. | By design of the token transport. |
 | **Demo credentials are published** | Anyone who reaches a deployed instance can sign in. | Deliberate: fictional data, and a demo nobody can enter is not a demo. |
 | **`JWT_SECRET` default is public** | Tokens are forgeable against an unconfigured instance. | Deliberate demo affordance, with a startup warning. |
-| **No dependency scanning in CI** | There is no CI. | Out of scope. |
-| **`docker compose up` is unverified** | The compose file and Dockerfiles are written but were never executed — Docker Desktop crashes on the author's machine. | Stated in the README rather than glossed. |
+| **Dependency audit is advisory** | `pip-audit` and `npm audit` run on every push but do not fail the build. | Pinned versions accumulate advisories faster than a portfolio project bumps them; a red build nobody can act on trains people to ignore red builds. The report is in the CI log. |
+| **`docker compose up` is verified only in CI** | The compose job builds and starts the stack on a clean runner and runs the smoke test against PostgreSQL. It has never run on the author's machine, where Docker Desktop crashes. | The runner is the more honest environment anyway: no cached images, no local state. |
 | **No multi-tenancy** | One organisation, no data isolation. | Not in scope for a single-company ISMS demo. |
 | **No backups or retention on the app's own data** | The tool that tracks FinFlow's backup control has no backup story of its own. | Demo. |
 
+### Containers
+
+The base compose file is production-shaped: the API runs as an unprivileged user, is
+not published on the host, and is reached only through the nginx container; PostgreSQL
+is not published at all; the frontend is a static bundle, not a dev server. The dev
+override (`docker-compose.override.yml`, applied automatically by `docker compose up`)
+adds the bind mounts and published ports, which is why they are in a file whose name
+says what they are for. `docker compose -f docker-compose.yml` is the deployable shape.
+
 ### If this were going to production
 
-In order: rate limiting and lockout on `/auth`, an audit log of every mutation with actor
-and before/after values, security headers with a real CSP, `JWT_SECRET` supplied from a
+In order: a shared store for login throttling plus account-level lockout,
+tamper-evidence for the audit trail, a CSP on the web server that serves the SPA, `JWT_SECRET` supplied from a
 secret manager, MFA, dependency and container scanning in CI, and TLS enforced with HSTS.
 
 ## Reporting a vulnerability
