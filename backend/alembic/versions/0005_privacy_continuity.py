@@ -9,36 +9,38 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
+from app.db.migration_types import pg_enum
+
 revision: str = "0005"
 down_revision: str | None = "0004"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-asset_type = sa.Enum(
+asset_type = pg_enum(
     "SYSTEM", "DATA_STORE", "SAAS_SERVICE", "THIRD_PARTY_SERVICE", "DEVICE_FLEET", "PROCESS",
     name="asset_type",
 )
-asset_classification = sa.Enum(
+asset_classification = pg_enum(
     "PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED", name="asset_classification"
 )
-exception_status = sa.Enum(
+exception_status = pg_enum(
     "PENDING", "APPROVED", "EXPIRED", "WITHDRAWN", "REJECTED", name="exception_status"
 )
-lawful_basis = sa.Enum(
+lawful_basis = pg_enum(
     "CONSENT", "CONTRACT", "LEGAL_OBLIGATION", "VITAL_INTERESTS", "PUBLIC_TASK",
     "LEGITIMATE_INTERESTS",
     name="lawful_basis",
 )
-transfer_safeguard = sa.Enum(
+transfer_safeguard = pg_enum(
     "NOT_APPLICABLE", "ADEQUACY_DECISION", "STANDARD_CONTRACTUAL_CLAUSES",
     "BINDING_CORPORATE_RULES", "DEROGATION",
     name="transfer_safeguard",
 )
-dpia_outcome = sa.Enum(
+dpia_outcome = pg_enum(
     "PROCEED", "PROCEED_WITH_MEASURES", "CONSULT_SUPERVISORY_AUTHORITY", "DO_NOT_PROCEED",
     name="dpia_outcome",
 )
-dpia_residual_risk = sa.Enum("LOW", "MEDIUM", "HIGH", name="dpia_residual_risk")
+dpia_residual_risk = pg_enum("LOW", "MEDIUM", "HIGH", name="dpia_residual_risk")
 
 _ENUMS = (
     asset_type, asset_classification, exception_status, lawful_basis, transfer_safeguard,

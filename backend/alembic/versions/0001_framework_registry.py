@@ -9,13 +9,15 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
+from app.db.migration_types import pg_enum
+
 revision: str = "0001"
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-scope_status = sa.Enum("PRIMARY", "SECONDARY", "ROADMAP", name="scope_status")
-mapping_relationship = sa.Enum("EQUIVALENT", "PARTIAL", "SUPPORTING", name="mapping_relationship")
+scope_status = pg_enum("PRIMARY", "SECONDARY", "ROADMAP", name="scope_status")
+mapping_relationship = pg_enum("EQUIVALENT", "PARTIAL", "SUPPORTING", name="mapping_relationship")
 
 
 def upgrade() -> None:

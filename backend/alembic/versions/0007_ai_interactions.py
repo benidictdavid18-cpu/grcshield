@@ -14,12 +14,14 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
+from app.db.migration_types import pg_enum
+
 revision: str = "0007"
 down_revision: str | None = "0006"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-ai_feature = sa.Enum(
+ai_feature = pg_enum(
     "RISK_ASSIST",
     "RISK_DESCRIPTION",
     "CONTROL_MAPPING",
@@ -29,7 +31,7 @@ ai_feature = sa.Enum(
     "POLICY_DRAFT",
     name="ai_feature",
 )
-ai_interaction_status = sa.Enum(
+ai_interaction_status = pg_enum(
     "OK",
     "DISABLED",
     "PROVIDER_UNAVAILABLE",

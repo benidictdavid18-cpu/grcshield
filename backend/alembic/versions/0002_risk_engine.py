@@ -9,24 +9,26 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
+from app.db.migration_types import pg_enum
+
 revision: str = "0002"
 down_revision: str | None = "0001"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-risk_category = sa.Enum(
+risk_category = pg_enum(
     "CYBERSECURITY", "DATA_PRIVACY", "THIRD_PARTY", "OPERATIONAL", "FINANCIAL",
     "LEGAL", "COMPLIANCE", "BUSINESS_CONTINUITY", "TECHNOLOGY",
     name="risk_category",
 )
-risk_band = sa.Enum("LOW", "MEDIUM", "HIGH", "CRITICAL", name="risk_band")
-risk_status = sa.Enum(
+risk_band = pg_enum("LOW", "MEDIUM", "HIGH", "CRITICAL", name="risk_band")
+risk_status = pg_enum(
     "OPEN", "TREATMENT_IN_PROGRESS", "MONITORING", "CLOSED", name="risk_status"
 )
-treatment_decision = sa.Enum(
+treatment_decision = pg_enum(
     "MITIGATE", "ACCEPT", "TRANSFER", "AVOID", name="treatment_decision"
 )
-control_effectiveness_basis = sa.Enum(
+control_effectiveness_basis = pg_enum(
     "NOT_TESTED", "DESIGN_ONLY", "TESTED_EFFECTIVE", "TESTED_WITH_EXCEPTIONS",
     "TESTED_INEFFECTIVE",
     name="control_effectiveness_basis",

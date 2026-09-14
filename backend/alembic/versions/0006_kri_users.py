@@ -9,15 +9,17 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
+from app.db.migration_types import pg_enum
+
 revision: str = "0006"
 down_revision: str | None = "0005"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-user_role = sa.Enum("AUDITOR", "ISMS_MANAGER", "ADMIN", name="user_role")
-kri_unit = sa.Enum("PERCENT", "COUNT", "DAYS", name="kri_unit")
-kri_direction = sa.Enum("HIGHER_IS_BETTER", "LOWER_IS_BETTER", name="kri_direction")
-measurement_frequency = sa.Enum(
+user_role = pg_enum("AUDITOR", "ISMS_MANAGER", "ADMIN", name="user_role")
+kri_unit = pg_enum("PERCENT", "COUNT", "DAYS", name="kri_unit")
+kri_direction = pg_enum("HIGHER_IS_BETTER", "LOWER_IS_BETTER", name="kri_direction")
+measurement_frequency = pg_enum(
     "MONTHLY", "QUARTERLY", "ANNUAL", name="measurement_frequency"
 )
 

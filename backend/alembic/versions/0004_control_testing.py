@@ -12,33 +12,35 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
+from app.db.migration_types import pg_enum
+
 revision: str = "0004"
 down_revision: str | None = "0003"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-design_effectiveness = sa.Enum(
+design_effectiveness = pg_enum(
     "NOT_ASSESSED", "EFFECTIVE", "DEFICIENT", name="design_effectiveness"
 )
-operating_effectiveness = sa.Enum(
+operating_effectiveness = pg_enum(
     "NOT_TESTED", "EFFECTIVE", "EFFECTIVE_WITH_EXCEPTIONS", "INEFFECTIVE",
     name="operating_effectiveness",
 )
-sample_selection_method = sa.Enum(
+sample_selection_method = pg_enum(
     "RANDOM", "HAPHAZARD", "JUDGMENTAL", "FULL_POPULATION", name="sample_selection_method"
 )
-test_conclusion = sa.Enum(
+test_conclusion = pg_enum(
     "PASS", "PASS_WITH_EXCEPTIONS", "FAIL", name="test_conclusion"
 )
-finding_severity = sa.Enum("LOW", "MEDIUM", "HIGH", "CRITICAL", name="finding_severity")
-finding_status = sa.Enum("DRAFT", "OPEN", "REMEDIATED", "CLOSED", name="finding_status")
-finding_source = sa.Enum(
+finding_severity = pg_enum("LOW", "MEDIUM", "HIGH", "CRITICAL", name="finding_severity")
+finding_status = pg_enum("DRAFT", "OPEN", "REMEDIATED", "CLOSED", name="finding_status")
+finding_source = pg_enum(
     "CONTROL_TEST", "INTERNAL_AUDIT", "MANAGEMENT_REVIEW", "INCIDENT", name="finding_source"
 )
-audit_status = sa.Enum(
+audit_status = pg_enum(
     "PLANNED", "IN_PROGRESS", "COMPLETED", "DEFERRED", name="audit_status"
 )
-nonconformity_status = sa.Enum(
+nonconformity_status = pg_enum(
     "OPEN", "CORRECTION_APPLIED", "CORRECTIVE_ACTION_IN_PROGRESS",
     "AWAITING_EFFECTIVENESS_CHECK", "CLOSED",
     name="nonconformity_status",

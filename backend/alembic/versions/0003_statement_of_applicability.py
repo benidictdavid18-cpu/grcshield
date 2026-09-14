@@ -9,26 +9,28 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
+from app.db.migration_types import pg_enum
+
 revision: str = "0003"
 down_revision: str | None = "0002"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-evidence_type = sa.Enum(
+evidence_type = pg_enum(
     "POLICY", "CONFIG_EXPORT", "REPORT", "LOG_EXTRACT", "SCREENSHOT", "ATTESTATION",
     "CERTIFICATE", "TICKET",
     name="evidence_type",
 )
-remediation_status = sa.Enum(
+remediation_status = pg_enum(
     "OPEN", "IN_PROGRESS", "BLOCKED", "COMPLETED", "CANCELLED", name="remediation_status"
 )
-remediation_priority = sa.Enum(
+remediation_priority = pg_enum(
     "LOW", "MEDIUM", "HIGH", "CRITICAL", name="remediation_priority"
 )
-remediation_source = sa.Enum(
+remediation_source = pg_enum(
     "SOA_GAP", "CONTROL_TEST", "AUDIT_FINDING", "RISK_TREATMENT", name="remediation_source"
 )
-implementation_status = sa.Enum(
+implementation_status = pg_enum(
     "NOT_IMPLEMENTED", "PARTIALLY_IMPLEMENTED", "IMPLEMENTED", name="implementation_status"
 )
 

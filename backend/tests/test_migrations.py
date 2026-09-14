@@ -15,6 +15,7 @@ PostgreSQL-specific DDL — native ENUM type creation in particular is a no-op o
 Those need a real PostgreSQL instance.
 """
 
+import re
 from pathlib import Path
 
 import pytest
@@ -135,3 +136,45 @@ def test_the_chain_is_reversible(tmp_path, monkeypatch):
     engine.dispose()
     get_settings.cache_clear()
     assert remaining == set(), f"downgrade left tables behind: {sorted(remaining)}"
+
+
+def _offline_postgres_sql(monkeypatch, capsys, *, direction: str) -> str:
+    """The DDL Alembic would send to PostgreSQL, rendered without a server.
+
+    The suite runs on SQLite, which has no enum types, so a mistake in how the
+    migrations create theirs is invisible here and fatal on first contact with
+    PostgreSQL -- which is how it was found. Offline mode renders the PostgreSQL
+    dialect's SQL to stdout, which is enough to count CREATE TYPE statements.
+    """
+    url = "postgresql+psycopg://offline:offline@localhost/offline"
+    monkeypatch.setenv("DATABASE_URL", url)
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+    try:
+        if direction == "up":
+            command.upgrade(_config(url), "base:head", sql=True)
+        else:
+            command.downgrade(_config(url), "head:base", sql=True)
+    finally:
+        get_settings.cache_clear()
+    return capsys.readouterr().out
+
+
+def _type_names(sql: str, verb: str) -> list[str]:
+    return re.findall(rf"^{verb} TYPE (\w+)", sql, flags=re.MULTILINE)
+
+
+def test_postgres_enum_types_are_created_exactly_once(monkeypatch, capsys):
+    """Each migration creates its enum types explicitly; create_table must not create
+    them again. PostgreSQL refuses the duplicate, and did."""
+    created = _type_names(_offline_postgres_sql(monkeypatch, capsys, direction="up"), "CREATE")
+    assert len(created) == 34
+    duplicates = sorted({name for name in created if created.count(name) > 1})
+    assert duplicates == [], f"CREATE TYPE emitted more than once for: {duplicates}"
+
+
+def test_postgres_enum_types_are_dropped_exactly_once(monkeypatch, capsys):
+    dropped = _type_names(_offline_postgres_sql(monkeypatch, capsys, direction="down"), "DROP")
+    assert len(dropped) == 34
+    assert len(set(dropped)) == 34
