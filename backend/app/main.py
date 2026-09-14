@@ -21,6 +21,7 @@ from app.api.routes import (
     testing,
 )
 from app.core.config import get_settings
+from app.core.headers import SecurityHeadersMiddleware
 
 settings = get_settings()
 logger = logging.getLogger("grcshield")
@@ -61,6 +62,11 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
+# Added last, which makes it outermost, so every response -- a CORS preflight the
+# middleware above answers itself, an error, a PDF -- carries the headers. HSTS only
+# outside development; see core/headers.py.
+app.add_middleware(SecurityHeadersMiddleware, hsts=settings.environment != "development")
 
 # Open: liveness, and the endpoint you need in order to authenticate at all.
 app.include_router(health.router)

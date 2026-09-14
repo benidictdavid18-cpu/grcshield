@@ -24,6 +24,8 @@ MANAGER = ("isms.manager", "manager-demo-2026")
 
 _passed = 0
 _failed: list[str] = []
+# Response headers of the most recent request to each path, for the hardening checks.
+_last_headers: dict[str, dict[str, str]] = {}
 
 
 def check(name: str, condition: bool, detail: str = "") -> bool:
@@ -55,11 +57,13 @@ def request(
         req.add_header("Content-Type", "application/json")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as response:
+            _last_headers[path.split("?")[0]] = {k.lower(): v for k, v in response.headers.items()}
             raw = response.read()
             if response.headers.get("Content-Type", "").startswith("application/json"):
                 return response.status, json.loads(raw)
             return response.status, raw
     except urllib.error.HTTPError as exc:
+        _last_headers[path.split("?")[0]] = {k.lower(): v for k, v in exc.headers.items()}
         raw = exc.read()
         try:
             return exc.code, json.loads(raw)
@@ -314,6 +318,24 @@ def main() -> int:
             "the register still answers after an AI request",
             request(base, "/risks/summary", token=auditor)[0] == 200,
         )
+
+    # --- Hardening ---------------------------------------------------------------
+    status, _ = request(base, "/health")
+    headers = _last_headers.get("/health", {})
+    check("responses carry a CSP", "default-src 'none'" in headers.get("content-security-policy", ""))
+    check("responses refuse framing", headers.get("x-frame-options") == "DENY")
+    check("responses are not cacheable", headers.get("cache-control") == "no-store")
+
+    # A throwaway username, so the demo accounts are never throttled by this script.
+    # The default limit is ten failures a minute; the eleventh must be a 429.
+    probe = {"username": "smoke-throttle-probe", "password": "x"}
+    codes = [request(base, "/auth/token", method="POST", body=probe)[0] for _ in range(11)]
+    check("ten failed sign-ins are 401", codes[:10] == [401] * 10, str(codes))
+    check("the eleventh is throttled with 429", codes[10] == 429, str(codes[10]))
+    check(
+        "the 429 says how long to wait",
+        _last_headers.get("/auth/token", {}).get("retry-after", "").isdigit(),
+    )
 
     # --- The audit trail -------------------------------------------------------
     # The manager re-scores RISK-004 and then puts it back. The register ends where it

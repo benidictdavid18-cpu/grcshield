@@ -1,10 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import time
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import current_user
-from app.core.security import create_access_token, verify_password
+from app.core.config import get_settings
+from app.core.rate_limit import login_failures
+from app.core.security import burn_a_verification, create_access_token, verify_password
 from app.db.session import get_db
 from app.models.user import Role, User
 
@@ -35,21 +39,51 @@ class MeOut(BaseModel):
 
 
 @router.post("/token", response_model=TokenOut)
-def login(payload: LoginIn, db: Session = Depends(get_db)) -> TokenOut:
+def login(payload: LoginIn, request: Request, db: Session = Depends(get_db)) -> TokenOut:
     """Exchange credentials for a bearer token.
 
     The same 401 is returned for an unknown username, a wrong password and a deactivated
-    account. Distinguishing them would let an attacker enumerate valid usernames.
+    account, and it is returned in the same time: an unknown username still pays for one
+    bcrypt comparison. Distinguishing the cases by body or by clock would let an attacker
+    enumerate valid usernames.
+
+    Repeated failures from one client against one account are refused with 429 before
+    any of that runs. See core/rate_limit.py for the shape of the limit.
     """
-    user = db.scalar(select(User).where(User.username == payload.username.strip().lower()))
-    if user is None or not user.is_active or not verify_password(
-        payload.password, user.hashed_password
-    ):
+    settings = get_settings()
+    username = payload.username.strip().lower()
+    key = (request.client.host if request.client else "unknown", username)
+    now = time.monotonic()
+
+    retry_after = login_failures.retry_after(
+        key,
+        now=now,
+        limit=settings.auth_failure_limit,
+        window=settings.auth_failure_window_seconds,
+    )
+    if retry_after is not None:
+        plural = "" if retry_after == 1 else "s"
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many failed sign-in attempts. Try again in {retry_after} second{plural}.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+    user = db.scalar(select(User).where(User.username == username))
+    if user is None:
+        burn_a_verification(payload.password)
+        authenticated = False
+    else:
+        authenticated = user.is_active and verify_password(payload.password, user.hashed_password)
+
+    if not authenticated or user is None:
+        login_failures.record_failure(key, now=now)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    login_failures.clear(key)
 
     token, expires_in = create_access_token(username=user.username, role=user.role.value)
     return TokenOut(

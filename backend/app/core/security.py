@@ -29,18 +29,54 @@ ALGORITHM = "HS256"
 TOKEN_TTL_HOURS = 8
 BCRYPT_ROUNDS = 12
 
+# bcrypt reads the first 72 bytes of a password and silently ignores the rest, so a
+# passphrase padded past 72 bytes verifies against the same 72 bytes with anything
+# appended. The bcrypt package used here does not refuse this (checked: a 73-byte
+# password verifies against a 72-byte hash). Refusing at hash time is the honest
+# answer; a password that cannot be stored in full cannot be checked in full.
+PASSWORD_MAX_BYTES = 72
+
+
+class PasswordTooLong(ValueError):
+    pass
+
 
 def hash_password(plain: str) -> str:
-    return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt(rounds=BCRYPT_ROUNDS)).decode()
+    encoded = plain.encode("utf-8")
+    if len(encoded) > PASSWORD_MAX_BYTES:
+        raise PasswordTooLong(
+            f"Passwords are limited to {PASSWORD_MAX_BYTES} bytes; bcrypt would silently "
+            "truncate a longer one."
+        )
+    return bcrypt.hashpw(encoded, bcrypt.gensalt(rounds=BCRYPT_ROUNDS)).decode()
 
 
 def verify_password(plain: str, hashed: str) -> bool:
+    encoded = plain.encode("utf-8")
+    if len(encoded) > PASSWORD_MAX_BYTES:
+        # Cannot have been stored, so cannot be correct. Fail closed rather than let
+        # bcrypt compare the first 72 bytes and say yes.
+        return False
     try:
-        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+        return bcrypt.checkpw(encoded, hashed.encode("utf-8"))
     except (ValueError, TypeError):
         # A malformed stored hash must fail closed, not raise into a 500 that tells an
         # attacker the account exists.
         return False
+
+
+# A real hash of a fixed value, compared against when the username is unknown, so the
+# unknown-user path costs one bcrypt like the wrong-password path does. Without it the
+# 401 is uniform but the response time is not, and the timing tells an attacker which
+# usernames exist. Computed once at import; the value is never a valid password.
+_DUMMY_HASH = bcrypt.hashpw(
+    b"grcshield-timing-equaliser", bcrypt.gensalt(rounds=BCRYPT_ROUNDS)
+).decode()
+
+
+def burn_a_verification(plain: str) -> None:
+    """Spend the bcrypt cost a real verification would, and discard the result."""
+    verify_password(plain, _DUMMY_HASH)
 
 
 def create_access_token(*, username: str, role: str) -> tuple[str, int]:
