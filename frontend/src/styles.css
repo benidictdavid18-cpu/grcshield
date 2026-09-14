@@ -2081,3 +2081,183 @@ button.card-link {
   color: var(--text);
   padding-left: 0.7rem;
 }
+
+/* --- Editing: forms that let the API say no ----------------------------------- */
+
+.edit-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-top: 1.25rem;
+}
+
+.edit-panel.is-open .ai-toggle {
+  border-bottom: 1px solid var(--border);
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1rem;
+}
+
+.edit-form > .muted {
+  margin: 0;
+}
+
+.edit-fields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.edit-fields label,
+.edit-wide {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  gap: 0.3rem;
+}
+
+.edit-form input,
+.edit-form select,
+.edit-form textarea {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.edit-form textarea {
+  resize: vertical;
+}
+
+.edit-form input:focus,
+.edit-form select:focus,
+.edit-form textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.edit-form select:disabled {
+  opacity: 0.5;
+}
+
+.edit-preview {
+  align-self: end;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding-bottom: 0.5rem;
+}
+
+/* The API's refusal, under the field it named. */
+.field-error {
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.edit-actions button:not(.primary) {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  padding: 0.5rem 0.9rem;
+}
+
+/* --- Change history ------------------------------------------------------------ */
+
+.history {
+  margin-top: 1.5rem;
+}
+
+.history h3 {
+  margin-bottom: 0.5rem;
+}
+
+.history-list {
+  border-left: 2px solid var(--border);
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 1rem;
+}
+
+.history-list li {
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.history-list li::before {
+  background: var(--accent);
+  border-radius: 50%;
+  content: '';
+  height: 8px;
+  left: calc(-1rem - 5px);
+  position: absolute;
+  top: 0.45rem;
+  width: 8px;
+}
+
+.history-head {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.history-action {
+  font-weight: 600;
+}
+
+.history-list p {
+  margin: 0.25rem 0;
+}
+
+.history-toggle {
+  background: none;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0;
+}
+
+.history-diff {
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.history-diff th,
+.history-diff td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.history-diff th {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.history-diff tr.is-changed td {
+  color: var(--text);
+}
+
+.history-diff tr:not(.is-changed) td {
+  color: var(--muted);
+}

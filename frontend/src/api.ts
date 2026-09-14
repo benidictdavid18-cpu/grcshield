@@ -613,6 +613,34 @@ export interface ExecutiveSummary {
   priorities: { headline: string; why: string; owner: string; by_when: string }[]
 }
 
+export interface ResidualUpdate {
+  residual_likelihood: number
+  residual_impact: number
+  residual_justification: string
+}
+
+export interface SoAUpdate {
+  applicable?: boolean
+  justification_inclusion?: string | null
+  justification_exclusion?: string | null
+  implementation_status?: ImplementationStatus
+  implementation_description?: string | null
+  owner?: string
+}
+
+export interface AuditEvent {
+  id: number
+  occurred_at: string
+  actor_username: string
+  actor_role: string
+  action: string
+  record_type: string
+  record_ref: string
+  before: Record<string, unknown> | null
+  after: Record<string, unknown>
+  summary: string
+}
+
 export interface Health {
   status: string
   database: string
@@ -623,21 +651,93 @@ export interface Health {
   disclaimer: string
 }
 
-async function get<T>(path: string): Promise<T> {
+export interface FieldError {
+  field: string
+  message: string
+}
+
+/** A write the API refused, with the offending fields named.
+ *
+ *  The backend's rule services return `422` as `[{field, message}]`; Pydantic's own
+ *  validation returns `[{loc, msg}]`; a handful of rules return a plain sentence. All
+ *  three land here as `fieldErrors` (possibly empty) plus a `message`, so a form can
+ *  put each error next to the field it belongs to and the rest at the top. */
+export class ApiValidationError extends Error {
+  readonly status: number
+  readonly fieldErrors: FieldError[]
+
+  constructor(status: number, message: string, fieldErrors: FieldError[]) {
+    super(message)
+    this.name = 'ApiValidationError'
+    this.status = status
+    this.fieldErrors = fieldErrors
+  }
+
+  /** Messages for one field, joined. */
+  for(field: string): string | null {
+    const messages = this.fieldErrors.filter((e) => e.field === field).map((e) => e.message)
+    return messages.length ? messages.join(' ') : null
+  }
+}
+
+function parseDetail(detail: unknown): { message: string; fieldErrors: FieldError[] } {
+  if (typeof detail === 'string') return { message: detail, fieldErrors: [] }
+  if (Array.isArray(detail)) {
+    const fieldErrors: FieldError[] = []
+    for (const item of detail) {
+      if (item && typeof item === 'object') {
+        const row = item as Record<string, unknown>
+        if (typeof row.field === 'string' && typeof row.message === 'string') {
+          fieldErrors.push({ field: row.field, message: row.message })
+        } else if (Array.isArray(row.loc) && typeof row.msg === 'string') {
+          // Pydantic: loc is ["body", "residual_justification"]; the last segment is the field.
+          const field = String(row.loc[row.loc.length - 1] ?? '')
+          // Pydantic prefixes a custom validator's message with its error class.
+          fieldErrors.push({ field, message: row.msg.replace(/^Value error, /, '') })
+        }
+      }
+    }
+    const message = fieldErrors.length
+      ? `${fieldErrors.length} problem${fieldErrors.length === 1 ? '' : 's'} with this change.`
+      : 'The API refused this change.'
+    return { message, fieldErrors }
+  }
+  return { message: 'The API refused this change.', fieldErrors: [] }
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const token = getToken()
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
   const response = await fetch(`${BASE}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
   })
   if (response.status === 401) {
     // An expired token should return to the sign-in screen, not leave a blank page.
     handleUnauthorised()
     throw new Error('Your session has expired. Please sign in again.')
   }
+  if (response.status === 422 || response.status === 403 || response.status === 404) {
+    // These carry a `detail` worth showing: the rule that refused the write, the role
+    // that is not allowed to, or the record that does not exist.
+    let detail: unknown = null
+    try {
+      detail = (await response.json()).detail
+    } catch {
+      /* not JSON; fall through to the generic message */
+    }
+    const parsed = parseDetail(detail)
+    throw new ApiValidationError(response.status, parsed.message, parsed.fieldErrors)
+  }
   if (!response.ok) {
     throw new Error(`${response.status} ${response.statusText} for ${path}`)
   }
   return (await response.json()) as T
 }
+
+const get = <T,>(path: string) => request<T>('GET', path)
 
 export const api = {
   health: () => get<Health>('/health'),
@@ -686,6 +786,19 @@ export const api = {
   executiveSummary: () => get<ExecutiveSummary>('/executive-summary'),
   riskRegisterReportUrl: () => `${BASE}/reports/risk-register.pdf`,
   executiveReportUrl: () => `${BASE}/reports/executive-summary.pdf`,
+
+  // --- Writes. Each one is a rule-checked endpoint; a refusal arrives as an
+  // ApiValidationError with the offending fields named. ---
+  updateResidual: (ref: string, payload: ResidualUpdate) =>
+    request<RiskDetail>('PATCH', `/risks/${ref}/residual`, payload),
+  updateSoAEntry: (ref: string, payload: SoAUpdate) =>
+    request<SoADetail>('PATCH', `/soa/${ref}`, payload),
+
+  // --- The application's audit trail: who changed what, from what, to what. ---
+  auditEvents: (params: Record<string, string> = {}) => {
+    const query = new URLSearchParams(params).toString()
+    return get<AuditEvent[]>(`/audit-events${query ? `?${query}` : ''}`)
+  },
 }
 
 /** PDF links cannot carry an Authorization header, so fetch and open as a blob. */

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 export interface Session {
   token: string
@@ -55,7 +55,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null)
   }, [])
 
-  onUnauthorised = logout
+  // Registered in an effect, not during render: assigning a module global while
+  // rendering is a side effect React may run twice in development, and the value
+  // would be stale if the provider ever re-rendered with a different logout.
+  useEffect(() => {
+    onUnauthorised = logout
+    return () => {
+      onUnauthorised = null
+    }
+  }, [logout])
 
   const login = useCallback(async (username: string, password: string) => {
     const response = await fetch('/api/auth/token', {
@@ -64,11 +72,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ username, password }),
     })
     if (!response.ok) {
-      throw new Error(
-        response.status === 401
-          ? 'Incorrect username or password.'
-          : `Sign-in failed (${response.status}).`,
-      )
+      if (response.status === 401) throw new Error('Incorrect username or password.')
+      // A 429 carries how long to wait; show the API's sentence rather than a code.
+      let detail: string | null = null
+      try {
+        detail = (await response.json()).detail ?? null
+      } catch {
+        /* not JSON */
+      }
+      throw new Error(typeof detail === 'string' ? detail : `Sign-in failed (${response.status}).`)
     }
     const body = await response.json()
     const next: Session = {

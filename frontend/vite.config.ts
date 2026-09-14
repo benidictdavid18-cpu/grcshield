@@ -1,8 +1,13 @@
+/// <reference types="vitest" />
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    include: ['src/**/*.test.{ts,tsx}'],
+  },
   server: {
     port: 5173,
     // The browser talks to /api on the dev server, which forwards to FastAPI.

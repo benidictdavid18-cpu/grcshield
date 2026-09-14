@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import {
@@ -17,7 +18,10 @@ import {
   type AiRiskDescription,
 } from '../ai'
 import { api, type Score } from '../api'
+import { useAuth } from '../auth'
+import { ChangeHistory } from '../editing'
 import { useAsync } from '../useAsync'
+import { ResidualForm } from './ResidualForm'
 import {
   BASIS_LABEL,
   BASIS_MEANING,
@@ -156,7 +160,12 @@ function ControlMappingBody({ data }: { data: AiControlMapping }) {
 
 export function RiskDetail() {
   const { riskRef = '' } = useParams()
-  const { data: risk, error, loading } = useAsync(() => api.risk(riskRef), [riskRef])
+  const { session } = useAuth()
+  // Bumped after a successful write so the page re-reads the record the API now holds,
+  // rather than trusting the response alone: the appetite comparison and the banners
+  // are derived server-side.
+  const [version, setVersion] = useState(0)
+  const { data: risk, error, loading } = useAsync(() => api.risk(riskRef), [riskRef, version])
 
   if (loading) return <p className="empty">Loading risk…</p>
   if (error) return <p className="error">Could not load {riskRef}: {error}</p>
@@ -288,6 +297,14 @@ export function RiskDetail() {
           </p>
         </div>
 
+        {session?.canWrite && (
+          <ResidualForm
+            key={`${risk.risk_ref}-${version}`}
+            risk={risk}
+            onSaved={() => setVersion((v) => v + 1)}
+          />
+        )}
+
         <div className="chain-arrow" aria-hidden="true">
           ↓
         </div>
@@ -353,6 +370,8 @@ export function RiskDetail() {
           <p>{risk.vulnerability}</p>
         </div>
       </div>
+
+      <ChangeHistory recordRef={risk.risk_ref} version={version} />
 
       <AiAssistant
         title="AI risk assistant"

@@ -1,7 +1,11 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { api } from '../api'
+import { useAuth } from '../auth'
+import { ChangeHistory } from '../editing'
 import { useAsync } from '../useAsync'
+import { SoAEditForm } from './SoAEditForm'
 import {
   CONCLUSION_LABEL,
   IMPLEMENTATION_LABEL,
@@ -39,8 +43,19 @@ function ChainStep({
   )
 }
 
-export function SoADrawer({ controlRef, onClose }: { controlRef: string; onClose: () => void }) {
-  const { data, error, loading } = useAsync(() => api.soaEntry(controlRef), [controlRef])
+export function SoADrawer({
+  controlRef,
+  onClose,
+  onChanged,
+}: {
+  controlRef: string
+  onClose: () => void
+  /** Called after a successful write, so the list behind the drawer can re-read. */
+  onChanged?: () => void
+}) {
+  const { session } = useAuth()
+  const [version, setVersion] = useState(0)
+  const { data, error, loading } = useAsync(() => api.soaEntry(controlRef), [controlRef, version])
 
   return (
     <aside className="drawer soa-drawer">
@@ -86,6 +101,17 @@ export function SoADrawer({ controlRef, onClose }: { controlRef: string; onClose
                 ))}
               </ul>
             </div>
+          )}
+
+          {session?.canWrite && (
+            <SoAEditForm
+              key={`${controlRef}-${version}`}
+              entry={data}
+              onSaved={() => {
+                setVersion((v) => v + 1)
+                onChanged?.()
+              }}
+            />
           )}
 
           <h3>Traceability chain</h3>
@@ -299,6 +325,8 @@ export function SoADrawer({ controlRef, onClose }: { controlRef: string; onClose
           <p className="muted">
             Last reviewed {data.last_reviewed ?? '—'} · next review {data.next_review ?? '—'}
           </p>
+
+          <ChangeHistory recordRef={controlRef} version={version} />
         </>
       )}
     </aside>

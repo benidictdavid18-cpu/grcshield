@@ -20,8 +20,11 @@ function refOrder(controlRef: string): number {
 }
 
 export function SoA() {
-  const overview = useAsync(() => api.soaOverview(), [])
-  const entries = useAsync(() => api.soa(), [])
+  // Bumped when the drawer saves an entry, so the counts and the row behind it
+  // re-read what the API now holds.
+  const [version, setVersion] = useState(0)
+  const overview = useAsync(() => api.soaOverview(), [version])
+  const entries = useAsync(() => api.soa(), [version])
   const [applicability, setApplicability] = useState<ApplicabilityFilter>('all')
   const [theme, setTheme] = useState('all')
   const [query, setQuery] = useState('')
@@ -247,7 +250,13 @@ export function SoA() {
         )}
       </div>
 
-      {selected && <SoADrawer controlRef={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <SoADrawer
+          controlRef={selected}
+          onClose={() => setSelected(null)}
+          onChanged={() => setVersion((v) => v + 1)}
+        />
+      )}
     </section>
   )
 }
