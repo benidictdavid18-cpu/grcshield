@@ -442,6 +442,9 @@ export interface ControlBrief {
 }
 
 export interface RiskExceptionRecord {
+  effective_state: string
+  approval_verified: boolean
+  approval_source: string | null
   exception_ref: string
   risk_ref: string
   risk_title: string

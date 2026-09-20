@@ -224,6 +224,9 @@ def main() -> int:
     status, queue = request(base, "/reassessments", token=auditor)
     check("reassessment queue is readable", status == 200 and isinstance(queue, list))
 
+    status, decisions = request(base, "/risk-exceptions/EXC-002/decisions", token=auditor)
+    check("sample approval has explicit provenance", status == 200 and bool(decisions) and decisions[0].get("source") == "SAMPLE_AUTHORED")
+
     # --- Reports ---------------------------------------------------------------
     print("\nReports")
     for name, path in (

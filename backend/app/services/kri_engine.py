@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.models.audit import AuditFinding, ControlTest
 from app.models.kri import KriDefinition
+from app.services.acceptance import effective_state as effective_acceptance_state
 from app.models.privacy import RiskException
 from app.models.risk import Control, Risk, RiskAppetiteThreshold
 from app.models.soa import (
@@ -165,7 +166,7 @@ def expired_exceptions(db: Session, as_of: date) -> ComputedKri:
     expired = [
         row
         for row in rows
-        if exception_state(row.expiry_date, ExceptionStatus(row.status), as_of) == "EXPIRED"
+        if effective_acceptance_state(row, as_of) == "EXPIRED"
     ]
     return ComputedKri(
         float(len(expired)),

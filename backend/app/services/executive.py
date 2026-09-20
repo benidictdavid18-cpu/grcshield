@@ -27,6 +27,7 @@ from app.models.soa import (
 )
 from app.services.control_testing import FindingSeverity
 from app.services.privacy_continuity import ExceptionStatus, exception_state
+from app.services.acceptance import covers
 from app.services.risk_scoring import CATEGORY_LABELS, RiskBand
 
 _POSTURE = {
@@ -92,8 +93,7 @@ def build(db: Session, as_of: date) -> dict:
     live_acceptance = {
         e.risk_id
         for e in exceptions
-        if exception_state(e.expiry_date, ExceptionStatus(e.status), as_of)
-        in ("APPROVED", "PENDING", "EXPIRING_SOON")
+        if covers(e, as_of)
     }
     uncovered = [r for r in breaching if r.id not in live_acceptance]
 

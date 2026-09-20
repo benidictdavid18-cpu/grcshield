@@ -889,6 +889,8 @@ def seed_risk_exceptions(db: Session, risks: dict[str, Risk]) -> dict[str, RiskE
         exception.decision_note = spec.decision_note
         db.flush()
         loaded[spec.ref] = exception
+    from app.seed.acceptance import seed_decisions
+    seed_decisions(db, loaded)
     return loaded
 
 

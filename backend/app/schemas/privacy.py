@@ -43,6 +43,9 @@ class ControlBrief(BaseModel):
 
 
 class ExceptionOut(BaseModel):
+    effective_state: str = "UNVERIFIED"
+    approval_verified: bool = False
+    approval_source: str | None = None
     exception_ref: str
     risk_ref: str
     risk_title: str

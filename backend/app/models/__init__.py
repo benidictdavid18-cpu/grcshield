@@ -53,6 +53,7 @@ from app.models.soa import (
     SoARemediationLink,
     SoARiskLink,
 )
+from app.models.acceptance import AcceptanceAuthority, AcceptanceDecision
 from app.models.user import Role, User
 from app.models.provenance import Reassessment, TestDisposition
 

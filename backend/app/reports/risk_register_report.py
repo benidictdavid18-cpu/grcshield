@@ -67,7 +67,8 @@ def render_risk_register(risks, thresholds, exceptions, as_of: date) -> bytes:
 
     live_by_risk: dict[int, list] = {}
     for exception in exceptions:
-        state = exception_state(exception.expiry_date, ExceptionStatus(exception.status), as_of)
+        from app.services.acceptance import effective_state
+        state = effective_state(exception, as_of)
         live_by_risk.setdefault(exception.risk_id, []).append((exception, state))
 
     story: list = [
@@ -98,7 +99,7 @@ def render_risk_register(risks, thresholds, exceptions, as_of: date) -> bytes:
                     1
                     for r in breaching
                     if not any(
-                        st in ("APPROVED", "PENDING", "EXPIRING_SOON")
+                        st in ("APPROVED", "EXPIRING_SOON")
                         for _, st in live_by_risk.get(r.id, [])
                     )
                 )
@@ -171,7 +172,7 @@ def render_risk_register(risks, thresholds, exceptions, as_of: date) -> bytes:
         ])
         if exceeds:
             has_live = any(
-                st in ("APPROVED", "PENDING", "EXPIRING_SOON") for _, st in acceptances
+                st in ("APPROVED", "EXPIRING_SOON") for _, st in acceptances
             )
             commands.append(
                 ("BACKGROUND", (0, index), (-1, index), ALERT_BG if has_live else BAD_BG)

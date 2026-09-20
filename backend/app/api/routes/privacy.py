@@ -39,7 +39,7 @@ from app.schemas.privacy import (
     PrivacyOverviewOut,
     RopaOut,
 )
-from app.services import audit_trail
+from app.services import audit_trail, acceptance
 from app.services.control_testing import OperatingEffectiveness
 from app.services.privacy_continuity import (
     EXPIRY_WARNING_DAYS,
@@ -128,7 +128,10 @@ def _exception_out(exception: RiskException, thresholds: dict, as_of: date) -> E
         expiry_date=exception.expiry_date,
         review_trigger=exception.review_trigger,
         status=exception.status,
-        state=exception.state(as_of),
+        state="PENDING" if exception.status.value == "PENDING" else exception.state(as_of),
+        effective_state=acceptance.effective_state(exception, as_of),
+        approval_verified=acceptance.verified(exception),
+        approval_source=acceptance.latest(exception).source if acceptance.latest(exception) else None,
         days_remaining=exception.days_remaining(as_of),
         decision_note=exception.decision_note,
     )
@@ -144,7 +147,7 @@ def list_exceptions(
     rows = db.scalars(_exception_query().order_by(RiskException.exception_ref)).unique().all()
     out = [_exception_out(row, thresholds, as_of) for row in rows]
     if state:
-        out = [row for row in out if row.state == state.upper()]
+        out = [row for row in out if row.effective_state == state.upper()]
     return out
 
 
@@ -159,12 +162,12 @@ def exception_summary(db: Session = Depends(get_db)) -> ExceptionSummaryOut:
     as_of = _today()
     thresholds = _thresholds(db)
     rows = db.scalars(_exception_query()).unique().all()
-    states = [row.state(as_of) for row in rows]
+    states = [acceptance.effective_state(row, as_of) for row in rows]
 
     covered = {
         row.risk.risk_ref
         for row in rows
-        if row.state(as_of) in ("APPROVED", "PENDING", "EXPIRING_SOON")
+        if acceptance.covers(row, as_of)
     }
     breaching = {
         risk.risk_ref
@@ -174,7 +177,7 @@ def exception_summary(db: Session = Depends(get_db)) -> ExceptionSummaryOut:
 
     return ExceptionSummaryOut(
         total=len(rows),
-        live=sum(1 for s in states if s in ("APPROVED", "PENDING")),
+        live=sum(1 for s in states if s == "APPROVED"),
         expired=sum(1 for s in states if s == "EXPIRED"),
         expiring_soon=sum(1 for s in states if s == "EXPIRING_SOON"),
         rejected_or_withdrawn=sum(1 for s in states if s in ("REJECTED", "WITHDRAWN")),

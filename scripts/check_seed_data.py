@@ -601,6 +601,9 @@ assert proof_tests["TEST-003"].conclusion == "PASS_WITH_EXCEPTIONS"
 assert proof_tests["TEST-002"].population_description != proof_tests["TEST-003"].population_description
 print("Provenance populations : workforce TEST-002; privileged TEST-003; missing workpapers remain author tasks")
 
+assert all(e.approval_date and e.expiry_date > e.approval_date for e in RISK_EXCEPTIONS if e.status == "APPROVED")
+print("Acceptance provenance : authored sample decisions only; no invented account authority")
+
 if failures:
     print(f"\nFAILED ({len(failures)}):")
     for failure in failures:

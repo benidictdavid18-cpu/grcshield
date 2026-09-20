@@ -110,8 +110,8 @@ function Acceptance() {
         <article key={exception.exception_ref} className="record">
           <h2>
             <code>{exception.exception_ref}</code>{' '}
-            <span className={`exc exc-${exception.state.toLowerCase()}`}>
-              {exception.state.replace(/_/g, ' ').toLowerCase()}
+            <span className={`exc exc-${exception.effective_state.toLowerCase()}`}>
+              {exception.effective_state.replace(/_/g, ' ').toLowerCase()}
             </span>
           </h2>
           <p className="card-meta">

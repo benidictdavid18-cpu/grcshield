@@ -148,3 +148,29 @@ That is not an oversight. It is the consequence of an explicit, approved busines
 decision, and the BIA records it so the decision is visible against the recovery target
 it undercuts. EXC-002's review trigger names the same tension from the other direction.
 Whoever renews that acceptance should be looking at BIA-001 while they do it.
+
+
+## Acceptance decisions and authority (G02)
+
+A submitted role string is not a signature. POST `/risk-exceptions` still records the
+submitted claim for import compatibility (`status` and legacy `state`), but new records
+have `approval_verified=false` and `effective_state=UNVERIFIED` until signed. Pending
+requests remain PENDING even near expiry. Coverage, the UI, executive output and risk
+PDF use the verified decision, not the submitted claim. No pending or unverified
+request covers an appetite breach.
+
+POST `/risk-exceptions/{ref}/decisions` records approval, rejection or withdrawal.
+Approval with a new expiry is a renewal and retains the previous decision. The account
+must hold unexpired authority for the recorded business approver role; the existing
+owner/escalation/security-function validator still applies unchanged. An administrator
+binds that authority through POST `/acceptance-authorities`, with a reason and expiry.
+No authority is invented for demo users. Deployment administrators must assign real
+business responsibility before interactive approvals are possible.
+
+Decisions retain actor, role, dates, note and a digest of the exact acceptance and
+residual score. Changing that content requires a fresh decision. The four original
+fictional decisions are explicitly SAMPLE_AUTHORED, not forged account signatures.
+Legacy migrated records are unverified until reviewed; migration never invents a signer.
+GET `/risk-exceptions/{ref}/decisions` exposes retained history. Every record remains
+Sample / Portfolio Assessment. This is evidence of application workflow, not a claim
+of legal electronic-signature certification.
