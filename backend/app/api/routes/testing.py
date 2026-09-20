@@ -450,13 +450,9 @@ def create_control_test(
 
     # Keep the control library honest: a test result that contradicts the recorded
     # operating rating means one of the two is wrong.
-    implied = CONCLUSION_TO_OPERATING[payload.conclusion]
-    if validate_effectiveness(control.design_effectiveness, implied):
-        # A deficient design cannot support an EFFECTIVE rating even after a clean test.
-        implied = OperatingEffectiveness.EFFECTIVE_WITH_EXCEPTIONS
     rating_before = audit_trail.snapshot(control, _EFFECTIVENESS_FIELDS)
-    control.operating_effectiveness = implied
-    control.last_tested = payload.test_date
+    from app.services.provenance import record_test_impacts
+    record_test_impacts(db, test)
     rating_after = audit_trail.snapshot(control, _EFFECTIVENESS_FIELDS)
 
     # Two events, because two records changed. The workpaper is new; the control's

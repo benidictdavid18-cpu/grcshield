@@ -218,6 +218,12 @@ def main() -> int:
         check("MFA coverage KRI computes 60%", mfa[0]["current_value"] == 60.0, str(mfa[0]["current_value"]))
         check("and is red against target", mfa[0]["current_band"] == "RED")
 
+    status, proven = request(base, "/risks/RISK-004", token=auditor)
+    privileged = next((c for c in proven.get("controls", []) if c["control_id"] == "AC-002"), {})
+    check("privileged risk names its actual test", privileged.get("supporting_test_ref") == "TEST-003")
+    status, queue = request(base, "/reassessments", token=auditor)
+    check("reassessment queue is readable", status == 200 and isinstance(queue, list))
+
     # --- Reports ---------------------------------------------------------------
     print("\nReports")
     for name, path in (

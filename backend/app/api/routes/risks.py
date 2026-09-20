@@ -26,7 +26,8 @@ from app.schemas.risk import (
     RiskSummaryOut,
     ScoreOut,
 )
-from app.services import audit_trail
+from app.services import audit_trail, provenance
+from sqlalchemy.orm import object_session
 from app.services.risk_scoring import (
     CATEGORY_LABELS,
     RiskBand,
@@ -168,6 +169,7 @@ def _detail(risk: Risk, thresholds: dict[RiskCategory, RiskAppetiteThreshold]) -
                 effectiveness_basis=link.effectiveness_basis,
                 credits_reduction=link.credits_reduction,
                 note=link.note,
+                **provenance.proof_summary(object_session(risk), link),
             )
             for link in sorted(risk.control_links, key=lambda link: link.control.control_id)
         ],

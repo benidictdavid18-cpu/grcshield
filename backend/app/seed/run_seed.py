@@ -726,6 +726,8 @@ def seed_control_tests(
                 f"implies {expected.value}."
             )
     db.flush()
+    from app.seed.provenance import seed_proofs
+    seed_proofs(db, loaded)
     return loaded
 
 

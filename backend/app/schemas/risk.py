@@ -31,6 +31,12 @@ class LinkedControlOut(BaseModel):
     effectiveness_basis: ControlEffectivenessBasis
     credits_reduction: bool
     note: str | None = None
+    supporting_test_ref: str | None = None
+    proof_state: str = "MISSING"
+    proof_note: str | None = None
+    test_population: str | None = None
+    test_period_start: date | None = None
+    test_period_end: date | None = None
 
 
 class ScoreOut(BaseModel):

@@ -593,6 +593,14 @@ print(
 )
 print(f"BIA processes         : {len(BIA_PROCESSES)}")
 
+# The two population-specific claims from ADR-008 must point at distinct real tests.
+proof_tests = {t.ref: t for t in CONTROL_TESTS}
+assert proof_tests["TEST-002"].control_ref == proof_tests["TEST-003"].control_ref == "AC-002"
+assert proof_tests["TEST-002"].conclusion == "PASS"
+assert proof_tests["TEST-003"].conclusion == "PASS_WITH_EXCEPTIONS"
+assert proof_tests["TEST-002"].population_description != proof_tests["TEST-003"].population_description
+print("Provenance populations : workforce TEST-002; privileged TEST-003; missing workpapers remain author tasks")
+
 if failures:
     print(f"\nFAILED ({len(failures)}):")
     for failure in failures:

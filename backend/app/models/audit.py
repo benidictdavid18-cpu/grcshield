@@ -127,7 +127,8 @@ class ControlTest(Base):
     what was found, and who reviewed it."""
 
     __tablename__ = "control_tests"
-    __table_args__ = (Index("ix_control_tests_control", "control_id"),)
+    __table_args__ = (Index("ix_control_tests_control", "control_id"),
+        UniqueConstraint("id", "control_id", name="uq_test_control"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     test_ref: Mapped[str] = mapped_column(String(24), unique=True, nullable=False)

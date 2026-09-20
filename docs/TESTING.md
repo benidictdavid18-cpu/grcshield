@@ -152,3 +152,36 @@ the seed loader.
 report registry: the three reports each support a named decision for a named audience,
 and this is a records bundle. Adding it would put a fourth entry in a report set that was
 cut to three on purpose.
+
+
+## Test-specific proof and reassessment (G01)
+
+A risk-control claim now names its supporting workpaper, population and period. The
+composite database foreign key refuses a test of another control. New proof bindings
+require a reviewed, active workpaper whose conclusion supports the recorded basis,
+and the author's population-specific note. ADR-008's workforce and privileged claims
+remain distinct; no scoring formula or existing validator changes.
+
+The sample has library-level tested claims without corresponding workpapers. Those
+remain visible as MISSING, with `TODO AUTHOR:BENNY - identify the workpaper and
+population supporting this tested basis.` They are not silently downgraded or supplied
+with invented tests. Migrated records likewise require explicit proof binding.
+
+Adverse runtime tests create owned reassessment tasks for linked risks, SoA entries,
+RoPA, DPIAs and BIA records. Scores, applicability, privacy outcomes and nonconformity
+judgments remain human decisions. A task cannot resolve without an authored resolution,
+a real evidence reference and an attributable actor. The evidence is still metadata
+until G06 provides attachments.
+
+A clean test on another population does not erase an outstanding failure. The runtime
+rollup uses the worst active workpaper, as the sample loader already does, and never
+moves last-tested backward. An explicit disposition can withdraw a workpaper or
+supersede it with a reviewed later test of the same declared population. Dispositions
+retain the old workpaper and trigger review of dependent claims; they never silently
+replace a risk's proof. All records remain Sample / Portfolio Assessment.
+
+Endpoints: PUT `/risks/{risk}/controls/{control}/proof`, POST
+`/control-tests/{test}/disposition`, GET `/reassessments`, POST
+`/reassessments/{id}/resolve`. Existing role restrictions apply. Mutation tests prove
+the cascade, distinct populations, older-test handling, database reference constraints,
+resolution evidence and read-only role refusal.

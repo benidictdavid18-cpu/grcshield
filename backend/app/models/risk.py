@@ -11,6 +11,7 @@ from sqlalchemy import (
     Date,
     Enum,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     String,
@@ -136,6 +137,9 @@ class RiskControl(Base):
     __tablename__ = "risk_controls"
     __table_args__ = (
         UniqueConstraint("risk_id", "control_id", name="uq_risk_control"),
+        ForeignKeyConstraint(["supporting_test_id", "control_id"],
+            ["control_tests.id", "control_tests.control_id"],
+            name="fk_risk_control_supporting_test", ondelete="RESTRICT"),
         Index("ix_risk_controls_risk", "risk_id"),
     )
 
@@ -148,6 +152,9 @@ class RiskControl(Base):
         Enum(ControlEffectivenessBasis, name="control_effectiveness_basis"), nullable=False
     )
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    supporting_test_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    proof_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    supporting_test = relationship("ControlTest", foreign_keys=[supporting_test_id, control_id], viewonly=True)
 
     risk: Mapped["Risk"] = relationship(back_populates="control_links")
     control: Mapped[Control] = relationship(back_populates="risk_links")
