@@ -1,6 +1,6 @@
 #!/bin/sh
 # Bring the schema up to head, load seed data, then serve.
-# Seeding is idempotent, so a restart against an existing volume is a no-op.
+# Sample initialization runs only for an empty database; restarts preserve edits.
 set -e
 
 echo "==> Running migrations"

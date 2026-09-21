@@ -227,6 +227,9 @@ def main() -> int:
     status, decisions = request(base, "/risk-exceptions/EXC-002/decisions", token=auditor)
     check("sample approval has explicit provenance", status == 200 and bool(decisions) and decisions[0].get("source") == "SAMPLE_AUTHORED")
 
+    status, bootstrap = request(base, "/sample-bootstrap", token=auditor)
+    check("startup preservation is recorded", status == 200 and bootstrap.get("status") in ("INITIALIZED", "PRESERVED", "REAPPLIED"))
+
     # --- Reports ---------------------------------------------------------------
     print("\nReports")
     for name, path in (

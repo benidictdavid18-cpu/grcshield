@@ -174,3 +174,22 @@ Legacy migrated records are unverified until reviewed; migration never invents a
 GET `/risk-exceptions/{ref}/decisions` exposes retained history. Every record remains
 Sample / Portfolio Assessment. This is evidence of application workflow, not a claim
 of legal electronic-signature certification.
+
+
+## Sample initialization is not a restart-time reset (G03)
+
+Normal `python -m app.seed.run_seed` initializes an empty database once. A singleton
+bootstrap record protects that boundary; upgrading a populated database marks it as
+preserved. Subsequent startup still runs migrations, then leaves the existing business
+records, proof bindings, approvals and audit history intact. A partially populated
+legacy database is preserved for operator review instead of being silently reconciled.
+GET `/sample-bootstrap` exposes the decision to authenticated readers.
+
+An operator can deliberately reapply authored sample values with
+`python -m app.seed.run_seed --reapply-sample --confirm-overwrite-edits --reason "..."`.
+This overwrites fields on known sample records and reconciles their sample links; it
+is not a backup restore and does not delete additional records. Take a backup before
+using it on data you care about. The request and local operator are recorded in the
+same transaction. The command has not been run against the user's database here.
+New releases deliver schema changes through migrations and must not depend on a
+restart overwriting the assessment to populate new business judgments.

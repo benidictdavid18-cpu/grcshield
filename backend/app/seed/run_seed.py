@@ -1,7 +1,7 @@
 """Load the framework registry, control library and ISO -> SOC 2 mappings.
 
-Idempotent: re-running updates titles and scope notes in place rather than
-duplicating rows, so `docker compose up` against an existing volume is safe.
+Normal startup initializes an empty database once and preserves existing records.
+Reapplying authored sample data requires an explicit operator command and reason.
 
 Run with:  python -m app.seed.run_seed
 """
@@ -1103,8 +1103,14 @@ def seed_kris(db: Session) -> int:
     return len(KRI_DEFINITIONS)
 
 
-def main() -> None:
+def main(*, reapply_sample: bool = False, reason: str | None = None) -> None:
+    from app.services.bootstrap import prepare
+    import getpass
     with SessionLocal() as db:
+        if not prepare(db, reapply=reapply_sample, reason=reason, operator=getpass.getuser()):
+            db.commit()
+            print("Existing records preserved; no sample data reapplied.")
+            return
         iso = seed_iso(db)
         soc2 = seed_soc2(db)
         seed_roadmap_frameworks(db)
@@ -1157,4 +1163,12 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description="Initialize the fictional sample only when the database is empty.")
+    parser.add_argument("--reapply-sample", action="store_true", help="Overwrite authored sample fields explicitly; preserves non-sample rows.")
+    parser.add_argument("--confirm-overwrite-edits", action="store_true")
+    parser.add_argument("--reason")
+    args = parser.parse_args()
+    if args.reapply_sample and (not args.confirm_overwrite_edits or not args.reason or not args.reason.strip()):
+        parser.error("Reapplication requires --confirm-overwrite-edits and a nonblank --reason.")
+    main(reapply_sample=args.reapply_sample, reason=args.reason)
