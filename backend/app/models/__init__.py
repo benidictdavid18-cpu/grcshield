@@ -55,6 +55,7 @@ from app.models.soa import (
 )
 from app.models.acceptance import AcceptanceAuthority, AcceptanceDecision
 from app.models.bootstrap import SampleBootstrap
+from app.models.context import ContextEntry, ScopeRevision
 from app.models.user import Role, User
 from app.models.provenance import Reassessment, TestDisposition
 

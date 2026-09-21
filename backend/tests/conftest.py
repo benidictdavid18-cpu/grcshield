@@ -93,6 +93,8 @@ def engine():
         run_seed.seed_bia(db, assets, controls, risk_map)
         run_seed.seed_users(db)
         run_seed.seed_kris(db)
+        from app.seed.context import seed_context
+        seed_context(db)
         db.commit()
 
     yield engine

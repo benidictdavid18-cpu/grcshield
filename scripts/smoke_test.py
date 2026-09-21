@@ -230,6 +230,11 @@ def main() -> int:
     status, bootstrap = request(base, "/sample-bootstrap", token=auditor)
     check("startup preservation is recorded", status == 200 and bootstrap.get("status") in ("INITIALIZED", "PRESERVED", "REAPPLIED"))
 
+    status, context = request(base, "/isms/context", token=auditor)
+    check("context register is readable", status == 200 and isinstance(context, list))
+    status, scopes = request(base, "/isms/scope-revisions", token=auditor)
+    check("scope revisions are readable", status == 200 and isinstance(scopes, list))
+
     # --- Reports ---------------------------------------------------------------
     print("\nReports")
     for name, path in (

@@ -140,3 +140,30 @@ Elected TSC criteria  : 38
 ISO -> SOC 2 mappings : 127  covering 83 ISO controls
 In-scope but unmapped : ['A.5.34']
 ```
+
+
+## Maintained context and scope decisions (G04)
+
+The context register records internal/external issues, interested-party requirements
+and ISMS processes with sources, accountable owners, relevance decisions and next
+review dates. A process entry describes its inputs, outputs and interactions; a party
+entry identifies the requirement the ISMS addresses. A linked risk must actually exist.
+PUT `/isms/context/{ref}` creates or revises a draft. Editing a reviewed entry requires
+its current revision and returns it to draft, retaining the prior content in the audit
+trail. POST `/isms/context/{ref}/review` refuses unresolved author hints, an unassessed
+relevance decision or an overdue next-review date.
+
+Scope revisions are separate records. POST `/isms/scope-revisions` captures the selected
+context inputs, boundaries, interfaces, exclusions and review date. Approval requires
+current reviewed issues, party requirements, processes and a climate-relevance
+assessment. The application does not presume climate relevance or irrelevance. An
+approved scope cannot be edited through the API; a new version retains a new snapshot,
+while the old one continues to show the exact inputs its approver saw.
+
+The new sample contains four draft inputs copied from existing facts and one draft
+scope. Each missing decision or owner carries `TODO AUTHOR:BENNY` with its specific
+hint. The 31 January 2027 draft review date aligns with the existing sample SoA review
+schedule and remains a proposed date to confirm before review. No approval is seeded.
+Existing databases are preserved at startup; the new sample is loaded only during
+empty-database initialization or an explicit sample reapplication. All context and scope
+records are labelled Sample / Portfolio Assessment.

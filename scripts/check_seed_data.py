@@ -606,6 +606,12 @@ print("Acceptance provenance : authored sample decisions only; no invented accou
 
 print("Bootstrap policy      : normal startup preserves existing sample edits")
 
+from app.seed.context import CONTEXT_SAMPLE
+assert len({x[0] for x in CONTEXT_SAMPLE}) == len(CONTEXT_SAMPLE)
+assert any(x[2] == "CLIMATE" and "TODO AUTHOR:BENNY" in x[7] for x in CONTEXT_SAMPLE)
+assert all(x[6] is None or x[6] in {risk.risk_ref for risk in RISKS} for x in CONTEXT_SAMPLE)
+print("Context sample        : draft facts, real risk links, unresolved climate judgment")
+
 if failures:
     print(f"\nFAILED ({len(failures)}):")
     for failure in failures:
