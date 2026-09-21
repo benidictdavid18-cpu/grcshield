@@ -617,6 +617,10 @@ assert "TODO AUTHOR:BENNY" in POLICY_CONTENT
 assert any(e.ref == "EV-029" for e in EVIDENCE)
 print("Document sample       : policy content deliberately pending author input")
 
+from app.seed.attachments import ATTACHMENT_SEED_POLICY
+assert "missing attachments" in ATTACHMENT_SEED_POLICY
+print("Attachment sample     : no fabricated binary proof; upload actual source artifacts")
+
 if failures:
     print(f"\nFAILED ({len(failures)}):")
     for failure in failures:

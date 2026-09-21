@@ -94,8 +94,8 @@ class Evidence(Base):
     valid_from: Mapped[date] = mapped_column(Date, nullable=False)
     valid_until: Mapped[date] = mapped_column(Date, nullable=False)
 
-    # No file upload in this phase. The reference records where the artifact lives so
-    # the chain is honest about what exists rather than implying a document store.
+    # Legacy source reference. Retrievable versioned bytes live in evidence_attachments;
+    # a path string alone still does not establish that an attachment exists.
     file_reference: Mapped[str | None] = mapped_column(String(300), nullable=True)
 
     control_id: Mapped[int | None] = mapped_column(

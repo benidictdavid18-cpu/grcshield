@@ -241,6 +241,12 @@ def main() -> int:
         status, revisions = request(base, f"/documents/{documents[0]['document_ref']}/revisions", token=auditor)
         check("controlled revisions resolve", status == 200 and isinstance(revisions, list))
 
+    status, artifacts = request(base, "/evidence/EV-002/attachments", token=auditor)
+    check("evidence attachment inventory resolves", status == 200 and isinstance(artifacts, list))
+    if artifacts and artifacts[0].get("purged_on") is None:
+        status, data = request(base, f"/evidence-attachments/{artifacts[0]['id']}/download", token=auditor)
+        check("retained evidence is retrievable", status == 200 and isinstance(data, bytes))
+
     # --- Reports ---------------------------------------------------------------
     print("\nReports")
     for name, path in (

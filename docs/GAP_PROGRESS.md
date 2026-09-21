@@ -12,11 +12,12 @@ tracks subsequent implementation, including remaining author work and verificati
 | G03 | Implemented | Migration 0012; one-time bootstrap, preservation on upgrade/restart, explicit local reapplication with reason and operator trail; six new tests. |
 | G04 | Implemented; context judgments remain draft | Migration 0013; context and party/process records, review lifecycle, frozen scope snapshots; seven new tests. Seed owners, relevance and scope boundaries carry explicit author hints. |
 | G05 | Implemented; sample policy content remains an author task | Migration 0014; retained text revisions, approvals, publication/supersession, download integrity and acknowledgements; eight new tests. |
-| G06–G21 | Open | Proceed in ranked order. |
+| G06 | Implemented; original artifacts must be supplied | Migration 0015; bounded artifact storage, authenticated retrieval, digest verification, access scope, retention/hold and purge trail; eleven new tests. No invented seed files. |
+| G07–G21 | Open | Proceed in ranked order. |
 | G22 | Phase 4 | Full interface overhaul begins after the record lifecycles. |
 
 Baseline: 419 backend tests and eight frontend tests. G01: 428 backend passed;
-G02: 436 backend passed; G03: 442 backend passed; G04: 449; G05: 457. Frontend tests and typecheck pass after the acceptance display
+G02: 436 backend passed; G03: 442 backend passed; G04: 449; G05: 457; G06: 468. Frontend tests and typecheck pass after the acceptance display
 change. Full build, live smoke with AI available/unavailable, browser verification and
 final inventory remain Phase 5/6 work; they have not been claimed complete.
 

@@ -97,6 +97,8 @@ def engine():
         seed_context(db)
         from app.seed.documents import seed_documents
         seed_documents(db)
+        from app.seed.attachments import seed_attachments
+        seed_attachments(db)
         db.commit()
 
     yield engine
