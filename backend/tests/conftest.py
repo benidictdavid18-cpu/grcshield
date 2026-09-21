@@ -101,6 +101,8 @@ def engine():
         seed_attachments(db)
         from app.seed.soa_releases import seed_releases
         seed_releases(db)
+        from app.seed.treatment import seed_treatment
+        seed_treatment(db)
         db.commit()
 
     yield engine

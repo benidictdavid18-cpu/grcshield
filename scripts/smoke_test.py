@@ -252,6 +252,11 @@ def main() -> int:
     if releases:
         check("SoA release preserves 93 controls", releases[0].get("entry_count") == 93)
 
+    status, plans = request(base, "/treatment-plans", token=auditor)
+    check("treatment plans are readable", status == 200 and isinstance(plans, list))
+    if plans:
+        check("milestones fit the risk review checkpoint", all(m["due_date"] <= p["review_deadline"] for p in plans for m in p["milestones"]))
+
     # --- Reports ---------------------------------------------------------------
     print("\nReports")
     for name, path in (

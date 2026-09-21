@@ -624,6 +624,11 @@ print("Attachment sample     : no fabricated binary proof; upload actual source 
 assert {entry.ref for entry in SOA_ENTRIES} == {control.ref for control in ANNEX_A_CONTROLS}
 print("SoA release policy    : exact 93-control snapshot; legacy source stays draft")
 
+from app.seed.treatment import TREATMENT_HINT
+assert "TODO AUTHOR:BENNY" in TREATMENT_HINT
+assert next(r for r in RISKS if r.risk_ref == "RISK-004").next_review is not None
+print("Treatment sample      : real risk/control/remediation; date conflict awaits author")
+
 if failures:
     print(f"\nFAILED ({len(failures)}):")
     for failure in failures:
