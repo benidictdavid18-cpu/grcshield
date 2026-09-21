@@ -95,6 +95,8 @@ def engine():
         run_seed.seed_kris(db)
         from app.seed.context import seed_context
         seed_context(db)
+        from app.seed.documents import seed_documents
+        seed_documents(db)
         db.commit()
 
     yield engine

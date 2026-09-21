@@ -235,6 +235,12 @@ def main() -> int:
     status, scopes = request(base, "/isms/scope-revisions", token=auditor)
     check("scope revisions are readable", status == 200 and isinstance(scopes, list))
 
+    status, documents = request(base, "/documents", token=auditor)
+    check("controlled documents are readable", status == 200 and isinstance(documents, list))
+    if isinstance(documents, list) and documents:
+        status, revisions = request(base, f"/documents/{documents[0]['document_ref']}/revisions", token=auditor)
+        check("controlled revisions resolve", status == 200 and isinstance(revisions, list))
+
     # --- Reports ---------------------------------------------------------------
     print("\nReports")
     for name, path in (

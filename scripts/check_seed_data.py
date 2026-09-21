@@ -612,6 +612,11 @@ assert any(x[2] == "CLIMATE" and "TODO AUTHOR:BENNY" in x[7] for x in CONTEXT_SA
 assert all(x[6] is None or x[6] in {risk.risk_ref for risk in RISKS} for x in CONTEXT_SAMPLE)
 print("Context sample        : draft facts, real risk links, unresolved climate judgment")
 
+from app.seed.documents import POLICY_CONTENT
+assert "TODO AUTHOR:BENNY" in POLICY_CONTENT
+assert any(e.ref == "EV-029" for e in EVIDENCE)
+print("Document sample       : policy content deliberately pending author input")
+
 if failures:
     print(f"\nFAILED ({len(failures)}):")
     for failure in failures:

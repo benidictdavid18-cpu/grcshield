@@ -1135,6 +1135,8 @@ def main(*, reapply_sample: bool = False, reason: str | None = None) -> None:
         kris = seed_kris(db)
         from app.seed.context import seed_context
         seed_context(db)
+        from app.seed.documents import seed_documents
+        seed_documents(db)
         db.commit()
 
     excluded = sum(1 for c in iso.values() if not c.in_scope)
