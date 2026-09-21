@@ -165,3 +165,35 @@ answer if it is argued.
 quality signals, coverage by theme, all 93 entries with gaps and exclusions shaded, and
 a gap analysis table with owners and due dates. The portfolio disclaimer is stamped on
 every page.
+
+
+## Releases, signatures and the working copy (G07)
+
+The editable SoA remains a working register. A release captures all 93 actual Annex A
+entries and their risk, control, remediation and evidence references, including retained
+attachment digests. Releases have a unique version, change rationale and content digest.
+They are immutable through the API. GET `/soa-releases/{id}/diff` compares a release
+against the working copy, or another release selected by `other_id`.
+
+POST `/soa-releases` prepares a draft. POST `/soa-releases/{id}/approve` requires a
+current authenticated account binding for the Chief Executive Officer business role,
+a substantive approval note, unchanged snapshot content and successful existing SoA
+validation. New validation also refuses completed/cancelled remediation as cover for
+an open implementation gap, and implementation claims without any evidence reference.
+The original applicability validator is unchanged.
+
+Evidence availability/freshness limitations are retained as explicit warnings. Where
+they exist, the approver must explicitly acknowledge them; this sign-off approves the
+applicability statement and does not attest that unavailable artifacts were inspected
+or certify control effectiveness. The approval records its actor, time and exact digest.
+Changes after sign-off make the working register WORKING_DRAFT while the approved
+snapshot survives. UI and PDF headers show that state; legacy per-row approval fields
+are source metadata, not new signatures on edited content.
+
+An approved release supplies catalogue scope flags for the SOC 2 crosswalk. An excluded
+source control no longer presents active mappings; mapping records remain retained for
+history. Draft scope changes do not silently change the latest signed crosswalk.
+
+The seed imports `sample-source-1.0` as a DRAFT with an author hint. It does not pretend
+that historical version/approver fields establish which later snapshot management saw.
+All records and releases retain the Sample / Portfolio Assessment label.

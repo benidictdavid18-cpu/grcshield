@@ -621,6 +621,9 @@ from app.seed.attachments import ATTACHMENT_SEED_POLICY
 assert "missing attachments" in ATTACHMENT_SEED_POLICY
 print("Attachment sample     : no fabricated binary proof; upload actual source artifacts")
 
+assert {entry.ref for entry in SOA_ENTRIES} == {control.ref for control in ANNEX_A_CONTROLS}
+print("SoA release policy    : exact 93-control snapshot; legacy source stays draft")
+
 if failures:
     print(f"\nFAILED ({len(failures)}):")
     for failure in failures:

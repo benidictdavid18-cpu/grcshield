@@ -114,9 +114,9 @@ def _overview_block(overview, styles, as_of: date) -> list:
         # _p() escapes for ReportLab's mini-HTML, so pass plain text here.
         _p("Statement of Applicability & Gap Analysis", styles["title"]),
         _p(
-            f"FinFlow Technologies · version {overview.version} · approved by "
-            f"{overview.approved_by or 'not approved'} on "
-            f"{overview.approved_date or '—'} · generated {as_of.isoformat()}",
+            f"FinFlow Technologies · {overview.approval_state.replace('_', ' ').lower()} · "
+            f"latest approved release {overview.approved_release_version or 'none'} · "
+            f"generated {as_of.isoformat()}",
             styles["subtitle"],
         ),
         Spacer(1, 4 * mm),

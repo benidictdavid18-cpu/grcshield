@@ -1139,6 +1139,8 @@ def main(*, reapply_sample: bool = False, reason: str | None = None) -> None:
         seed_documents(db)
         from app.seed.attachments import seed_attachments
         seed_attachments(db)
+        from app.seed.soa_releases import seed_releases
+        seed_releases(db)
         db.commit()
 
     excluded = sum(1 for c in iso.values() if not c.in_scope)

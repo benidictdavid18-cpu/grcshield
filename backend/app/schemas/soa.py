@@ -117,6 +117,9 @@ class ThemeSummaryOut(BaseModel):
 
 
 class SoAOverviewOut(BaseModel):
+    approval_state: str = "WORKING_DRAFT"
+    approved_release_version: str | None = None
+    has_unreleased_changes: bool = True
     """The header an auditor reads before anything else."""
 
     total_controls: int

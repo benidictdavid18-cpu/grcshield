@@ -256,6 +256,9 @@ export interface ThemeSummary {
 }
 
 export interface SoAOverview {
+  approval_state: string
+  approved_release_version: string | null
+  has_unreleased_changes: boolean
   total_controls: number
   applicable: number
   excluded: number

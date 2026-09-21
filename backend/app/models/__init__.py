@@ -58,6 +58,7 @@ from app.models.bootstrap import SampleBootstrap
 from app.models.context import ContextEntry, ScopeRevision
 from app.models.document import ControlledDocument, DocumentRevision, DocumentAcknowledgement
 from app.models.attachment import EvidenceAttachment
+from app.models.soa_release import SoARelease
 from app.models.user import Role, User
 from app.models.provenance import Reassessment, TestDisposition
 

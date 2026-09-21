@@ -33,7 +33,7 @@ from app.schemas.soa import (
     ThemeSummaryOut,
 )
 from app.seed.annex_a_2022 import THEME_TITLES
-from app.services import audit_trail
+from app.services import audit_trail, soa_releases
 from app.services.risk_scoring import CATEGORY_LABELS
 from app.services.soa_validation import AUTHOR_TODO_MARKER, entry_errors
 
@@ -200,6 +200,7 @@ def overview(db: Session = Depends(get_db)) -> SoAOverviewOut:
         approved_by=first.approved_by,
         approved_date=first.approved_date,
         themes=themes,
+        **soa_releases.state(db),
     )
 
 
@@ -387,7 +388,7 @@ def update_entry(
     for field, value in proposed.items():
         setattr(entry, field, value)
 
-    errors = entry_errors(entry)
+    errors = entry_errors(entry) + soa_releases.active_gap_errors(entry)
     if errors:
         for field, value in original.items():
             setattr(entry, field, value)

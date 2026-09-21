@@ -247,6 +247,11 @@ def main() -> int:
         status, data = request(base, f"/evidence-attachments/{artifacts[0]['id']}/download", token=auditor)
         check("retained evidence is retrievable", status == 200 and isinstance(data, bytes))
 
+    status, releases = request(base, "/soa-releases", token=auditor)
+    check("SoA release history is readable", status == 200 and isinstance(releases, list))
+    if releases:
+        check("SoA release preserves 93 controls", releases[0].get("entry_count") == 93)
+
     # --- Reports ---------------------------------------------------------------
     print("\nReports")
     for name, path in (

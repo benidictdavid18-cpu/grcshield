@@ -107,6 +107,7 @@ export function SoA() {
               </div>
             </div>
 
+            <p className="muted">{summary.approval_state === 'APPROVED' ? `Approved release ${summary.approved_release_version}` : 'Working draft — changes require release approval.'}</p>
             <div className="quality-strip">
               <span>
                 <strong>{summary.open_remediation}</strong> open remediation

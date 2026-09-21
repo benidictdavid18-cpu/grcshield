@@ -150,6 +150,6 @@ def get_control(code: str, control_ref: str, db: Session = Depends(get_db)) -> C
                 group_title=target.group_title,
                 relationship_type=mapping.relationship_type,
             )
-            for mapping, target in mapping_rows
+            for mapping, target in mapping_rows if control.in_scope
         ],
     )
