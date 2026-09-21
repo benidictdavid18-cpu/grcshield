@@ -629,6 +629,10 @@ assert "TODO AUTHOR:BENNY" in TREATMENT_HINT
 assert next(r for r in RISKS if r.risk_ref == "RISK-004").next_review is not None
 print("Treatment sample      : real risk/control/remediation; date conflict awaits author")
 
+from app.seed.planning import OBJECTIVE_HINT, CHANGE_HINT, SCALE_HINT
+assert all("TODO AUTHOR:BENNY" in hint for hint in (OBJECTIVE_HINT, CHANGE_HINT, SCALE_HINT))
+print("ISMS planning sample  : commitments and scale guidance await author judgment")
+
 if failures:
     print(f"\nFAILED ({len(failures)}):")
     for failure in failures:

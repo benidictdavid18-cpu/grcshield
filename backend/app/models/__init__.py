@@ -60,6 +60,7 @@ from app.models.document import ControlledDocument, DocumentRevision, DocumentAc
 from app.models.attachment import EvidenceAttachment
 from app.models.soa_release import SoARelease
 from app.models.treatment import TreatmentPlan, TreatmentControl, TreatmentMilestone
+from app.models.planning import ISMSPlan, PlanEvaluation
 from app.models.user import Role, User
 from app.models.provenance import Reassessment, TestDisposition
 

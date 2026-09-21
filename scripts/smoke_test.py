@@ -257,6 +257,9 @@ def main() -> int:
     if plans:
         check("milestones fit the risk review checkpoint", all(m["due_date"] <= p["review_deadline"] for p in plans for m in p["milestones"]))
 
+    status, objectives = request(base, "/isms/plans", token=auditor)
+    check("objectives and planned changes are readable", status == 200 and isinstance(objectives, list))
+
     # --- Reports ---------------------------------------------------------------
     print("\nReports")
     for name, path in (

@@ -15,11 +15,12 @@ tracks subsequent implementation, including remaining author work and verificati
 | G06 | Implemented; original artifacts must be supplied | Migration 0015; bounded artifact storage, authenticated retrieval, digest verification, access scope, retention/hold and purge trail; eleven new tests. No invented seed files. |
 | G07 | Implemented; source release awaits author review | Migration 0016; immutable 93-control snapshots, authorized sign-off, diff, evidence-limitations acknowledgement and draft-aware UI/PDF; eight new tests. |
 | G08 | Implemented; sample commitments await author agreement | Migration 0017; resources, milestones/dependencies, business approval, evidence-backed closure and database-enforced review deadlines; eight new tests. |
-| G09–G21 | Open | Proceed in ranked order. |
+| G09 | Implemented; targets and change decisions await author input | Migration 0018; objectives and planned ISMS changes, reviewed context, resources, leadership approval, evidence-backed implementation and retained evaluations; seven new tests. Seed targets remain unset and risk-scale guidance remains a draft. |
+| G10–G21 | Open | Proceed in ranked order. |
 | G22 | Phase 4 | Full interface overhaul begins after the record lifecycles. |
 
 Baseline: 419 backend tests and eight frontend tests. G01: 428 backend passed;
-G02: 436 backend passed; G03: 442 backend passed; G04: 449; G05: 457; G06: 468; G07: 476; G08: 484. Frontend tests and typecheck pass after the acceptance display
+G02: 436 backend passed; G03: 442 backend passed; G04: 449; G05: 457; G06: 468; G07: 476; G08: 484; G09: 491. Frontend tests and typecheck pass after the acceptance display
 change. Full build, live smoke with AI available/unavailable, browser verification and
 final inventory remain Phase 5/6 work; they have not been claimed complete.
 
