@@ -2,6 +2,7 @@ from datetime import date
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 
 class Settings(BaseSettings):
@@ -9,6 +10,12 @@ class Settings(BaseSettings):
 
     app_name: str = "GRCShield"
     environment: str = "development"
+    maintenance_enabled: bool = True
+    maintenance_interval_seconds: int = Field(default=300, ge=30)
+    ai_request_limit: int = Field(default=30, ge=1)
+    ai_rate_window_seconds: int = Field(default=60, ge=1)
+    ai_concurrency_limit: int = Field(default=2, ge=1)
+    ai_retention_days: int = Field(default=30, ge=1)
 
     # Portfolio disclaimer surfaced by the API and stamped on every report.
     # Rule 1 of the project charter: never imply FinFlow is certified or audited.
@@ -78,6 +85,24 @@ class Settings(BaseSettings):
     # Ask Ollama to constrain generation to the response JSON schema. Falls back to
     # plain JSON mode automatically when the running Ollama build rejects a schema.
     ai_structured_output: bool = True
+
+    def validate_deployment(self) -> None:
+        """Keep published portfolio defaults inside the local development boundary."""
+        if self.environment == "development":
+            return
+        from sqlalchemy.engine import make_url
+
+        unsafe = []
+        if self.jwt_secret_is_default or len(self.jwt_secret) < 32:
+            unsafe.append("JWT_SECRET (at least 32 characters)")
+        if self.demo_auditor_password == "auditor-demo-2026":
+            unsafe.append("DEMO_AUDITOR_PASSWORD")
+        if self.demo_manager_password == "manager-demo-2026":
+            unsafe.append("DEMO_MANAGER_PASSWORD")
+        if make_url(self.database_url).password == "grcshield":
+            unsafe.append("DATABASE_URL credentials")
+        if unsafe:
+            raise RuntimeError("Non-development startup refused: replace " + ", ".join(unsafe))
 
     @property
     def jwt_secret_is_default(self) -> bool:

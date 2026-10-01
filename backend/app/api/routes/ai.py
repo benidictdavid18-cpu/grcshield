@@ -67,6 +67,7 @@ from app.schemas.ai import (
     SweepCandidateOut,
 )
 from app.services.ai import context as ai_context
+from app.services.ai.limits import inference_limits
 from app.services.ai.provider import (
     AiDisabled,
     AiUnavailable,
@@ -142,15 +143,16 @@ def _run(
 ) -> AiResult:
     """Call the service and translate its failures into honest status codes."""
     try:
-        return service.generate(
-            db,
-            username=user.username,
-            user_role=user.role.value,
-            feature=feature,
-            context=record_context,
-            response_type=response_type,
-            question=question,
-        )
+        with inference_limits.acquire(user.username, feature.value):
+            return service.generate(
+                db,
+                username=user.username,
+                user_role=user.role.value,
+                feature=feature,
+                context=record_context,
+                response_type=response_type,
+                question=question,
+            )
     except AiDisabled as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
     except AiUnavailable as exc:

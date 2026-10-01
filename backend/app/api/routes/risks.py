@@ -229,6 +229,9 @@ def update_residual(
     # Same transaction as the change: a re-score with no trail entry cannot happen.
     # Re-submitting identical values is not a decision and leaves no event.
     if audit_trail.changed_fields(before, after):
+        from app.services.monitoring import capture_risk
+
+        capture_risk(db, risk, user, 'Authenticated residual assessment revision.')
         score_moved = (before["residual_likelihood"], before["residual_impact"]) != (
             after["residual_likelihood"],
             after["residual_impact"],

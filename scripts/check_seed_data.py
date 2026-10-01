@@ -633,10 +633,52 @@ from app.seed.planning import OBJECTIVE_HINT, CHANGE_HINT, SCALE_HINT
 assert all("TODO AUTHOR:BENNY" in hint for hint in (OBJECTIVE_HINT, CHANGE_HINT, SCALE_HINT))
 print("ISMS planning sample  : commitments and scale guidance await author judgment")
 
+from app.seed.assurance import PROGRAMME_HINT
+assert "TODO AUTHOR:BENNY" in PROGRAMME_HINT
+print("Assurance sample      : programme decisions pending; historical records not re-signed")
+
 if failures:
     print(f"\nFAILED ({len(failures)}):")
     for failure in failures:
         print(f"  - {failure}")
     sys.exit(1)
+
+
+
+from app.seed.incidents import INCIDENT_HINT  # noqa: E402
+assert "TODO AUTHOR:BENNY" in INCIDENT_HINT
+print("Incident sample       : TEST-008 observation awaits triage, not a declared breach")
+
+from app.seed.suppliers import SUPPLIER_HINT  # noqa: E402
+assert "TODO AUTHOR:BENNY" in SUPPLIER_HINT
+print("Supplier sample       : AWS contract review remains an author task")
+
+from app.seed.people import COMPETENCE_HINT  # noqa: E402
+assert "TODO AUTHOR:BENNY" in COMPETENCE_HINT
+print("Competence sample     : no invented employee evaluations")
+
+from app.seed.obligations import OBLIGATION_HINT  # noqa: E402
+assert "TODO AUTHOR:BENNY" in OBLIGATION_HINT
+print("Obligation sample     : applicability awaits authorized review")
+
+from app.seed.operations import OPERATIONS_HINT  # noqa: E402
+assert "TODO AUTHOR:BENNY" in OPERATIONS_HINT
+print("Operational sample    : retained draft; no invented exercise evidence")
+
+from app.seed.monitoring import MONITORING_HINT  # noqa: E402
+assert "TODO AUTHOR:BENNY" in MONITORING_HINT
+print("Monitoring sample     : collection plans unconfirmed; observations not backfilled")
+
+from app.seed.notifications import NOTIFICATION_HINT  # noqa: E402
+assert "TODO AUTHOR:BENNY" in NOTIFICATION_HINT
+print("Notification sample   : no recipient assignment invented")
+
+from app.seed.maintenance import MAINTENANCE_POLICY  # noqa: E402
+assert "audit" in MAINTENANCE_POLICY
+print("Maintenance sample    : no fictitious pruning runs")
+
+from app.seed.references import REFERENCE_POLICY  # noqa: E402
+assert "transactional" in REFERENCE_POLICY
+print("Reference policy      : counters preserve authored high-water marks")
 
 print("\nAll seed-data checks passed.")

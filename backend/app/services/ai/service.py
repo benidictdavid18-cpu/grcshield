@@ -326,13 +326,13 @@ class AIService:
                 response_chars=response_chars,
                 response_digest=digest,
                 guardrail_flags=", ".join(guardrail_flags) if guardrail_flags else None,
-                error_note=error_note,
+                error_note=status.value if error_note else None,
             )
             db.add(interaction)
             db.commit()
             return interaction.interaction_ref
         except SQLAlchemyError:
-            logger.warning("Could not write the AI interaction log row.", exc_info=True)
+            logger.warning("Could not write the AI interaction log row; diagnostic details omitted.")
             db.rollback()
             return None
 
@@ -342,11 +342,9 @@ def _digest(text: str) -> str:
 
 
 def _next_interaction_ref(db: Session) -> str:
-    existing = db.scalars(select(AiInteraction.interaction_ref)).all()
-    numbers = [
-        int(ref.rsplit("-", 1)[-1]) for ref in existing if ref.rsplit("-", 1)[-1].isdigit()
-    ]
-    return f"AI-{max(numbers, default=0) + 1:06d}"
+    from app.services.references import allocate
+    return allocate(db, AiInteraction.interaction_ref, "AI", width=6)
+
 
 
 def output_guardrail_codes(suggestion: Suggestion) -> list[str]:

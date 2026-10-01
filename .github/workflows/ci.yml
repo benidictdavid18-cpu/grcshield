@@ -140,3 +140,29 @@ jobs:
       - name: Tear down
         if: always()
         run: docker compose -f docker-compose.yml down --volumes
+
+
+  postgres:
+    name: PostgreSQL migration and constraint integration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: grc_test
+          POSTGRES_PASSWORD: isolated-ci-only
+          POSTGRES_DB: grc_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U grc_test"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r backend/requirements-dev.txt
+      - run: python -m pytest tests/test_postgres_integration.py -q
+        working-directory: backend
+        env:
+          TEST_POSTGRES_URL: postgresql+psycopg://grc_test:isolated-ci-only@localhost:5432/grc_test

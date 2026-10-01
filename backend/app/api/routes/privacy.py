@@ -222,10 +222,9 @@ def create_exception(
             detail=[{"field": e.field, "message": e.message} for e in errors],
         )
 
-    existing = db.scalars(select(RiskException.exception_ref)).all()
-    numbers = [int(ref.split("-")[-1]) for ref in existing if ref.split("-")[-1].isdigit()]
+    from app.services.references import allocate
     exception = RiskException(
-        exception_ref=f"EXC-{max(numbers, default=0) + 1:03d}",
+        exception_ref=allocate(db, RiskException.exception_ref, "EXC"),
         risk_id=risk.id,
         requested_by=payload.requested_by,
         business_justification=payload.business_justification,
@@ -247,6 +246,9 @@ def create_exception(
         before=None,
         after={
             "risk_ref": risk.risk_ref,
+            "business_justification": payload.business_justification,
+            "compensating_controls": payload.compensating_controls,
+            "review_trigger": payload.review_trigger,
             "requested_by": payload.requested_by,
             "approver_role": payload.approver_role,
             "approval_date": payload.approval_date,

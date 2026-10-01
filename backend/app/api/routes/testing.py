@@ -317,9 +317,9 @@ def get_control_test(test_ref: str, db: Session = Depends(get_db)) -> ControlTes
 
 
 def _next_ref(db: Session, model, column, prefix: str) -> str:
-    existing = db.scalars(select(column)).all()
-    numbers = [int(ref.split("-")[-1]) for ref in existing if ref.rsplit("-", 1)[-1].isdigit()]
-    return f"{prefix}-{max(numbers, default=0) + 1:03d}"
+    from app.services.references import allocate
+    return allocate(db, column, prefix)
+
 
 
 @router.post("/control-tests", response_model=ControlTestDetailOut, status_code=201)
@@ -410,7 +410,8 @@ def create_control_test(
                 f"{test.test_ref} concluded {payload.conclusion.value} against "
                 f"{control.control_id} ({control.title}). "
                 f"{payload.exceptions_count} exception(s) in a sample of "
-                f"{payload.sample_size}. {payload.exception_details or ''}"
+                f"{payload.sample_size}. {payload.exception_details or ''} "
+                "TODO AUTHOR:BENNY  -  review the mechanically proposed severity and owner before approval."
             ).strip(),
             severity=severity,
             status=FindingStatus.DRAFT,
@@ -429,7 +430,8 @@ def create_control_test(
             ),
             title=f"Remediate {finding.finding_ref}: {control.control_id}",
             description=(
-                f"Raised automatically from {test.test_ref}. {payload.exception_details or ''}"
+                f"Raised automatically from {test.test_ref}. {payload.exception_details or ''} "
+                "TODO AUTHOR:BENNY  -  confirm the proposed priority, owner and deadline."
             ).strip(),
             owner=payload.remediation_owner or control.owner_role,
             # Default 90 days out. A date the owner has not agreed is a placeholder, but
@@ -437,6 +439,7 @@ def create_control_test(
             due_date=payload.remediation_due_date or date.fromordinal(
                 payload.test_date.toordinal() + 90
             ),
+            raised_date=payload.test_date,
             status=RemediationStatus.OPEN,
             priority=RemediationPriority(RemediationPriorityForSeverity[severity]),
             source=RemediationSource.CONTROL_TEST,
@@ -471,6 +474,8 @@ def create_control_test(
         record_ref=test.test_ref,
         before=None,
         after={
+            "workpaper": audit_trail.snapshot(test, tuple(c.name for c in test.__table__.columns)),
+            "submitted": payload.model_dump(mode="json"),
             "control_id": control.control_id,
             "conclusion": payload.conclusion,
             "sample_size": payload.sample_size,

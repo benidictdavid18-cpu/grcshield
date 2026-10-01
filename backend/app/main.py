@@ -1,12 +1,14 @@
+import asyncio
 import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.deps import current_user, require_write
 from app.api.routes import (
+    records,
     ai,
     audit_trail,
     auth,
@@ -24,6 +26,15 @@ from app.api.routes import (
     soa_releases,
     treatment,
     planning,
+    assurance,
+    incidents,
+    suppliers,
+    people,
+    obligations,
+    operations,
+    monitoring,
+    notifications,
+    maintenance,
     reports,
     risks,
     soa,
@@ -37,11 +48,7 @@ logger = logging.getLogger("grcshield")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    if settings.jwt_secret_is_default and settings.environment != "development":
-        logger.warning(
-            "JWT_SECRET is still the built-in development default. Set JWT_SECRET before "
-            "exposing this service to anything."
-        )
+    settings.validate_deployment()
     if settings.ai_enabled and not settings.ollama_host_is_local:
         # Ollama has no authentication of its own. Pointing OLLAMA_BASE_URL at a public
         # address publishes an unauthenticated inference endpoint to the internet, and
@@ -51,7 +58,16 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
             "authentication; do not expose it to the public internet.",
             settings.ollama_base_url,
         )
-    yield
+    from app.services.maintenance import worker
+
+    task = asyncio.create_task(worker()) if settings.maintenance_enabled else None
+    try:
+        yield
+    finally:
+        if task:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
 
 
 app = FastAPI(
@@ -85,6 +101,7 @@ app.include_router(auth.router)
 # read-only role. Applied once at the router level rather than per-endpoint, because a
 # per-endpoint decorator is a rule you can forget to apply to the next endpoint.
 _protected = [
+    records.router,
     frameworks.router,
     risks.router,
     soa.router,
@@ -100,6 +117,14 @@ _protected = [
     soa_releases.router,
     treatment.router,
     planning.router,
+    assurance.router,
+    incidents.router,
+    suppliers.router,
+    people.router,
+    obligations.router,
+    operations.router,
+    monitoring.router,
+    maintenance.router,
     metrics.router,
     reports.router,
     audit_trail.router,
@@ -114,3 +139,4 @@ for router in _protected:
 # field capable of carrying a GRC decision. The reasoning is set out in full at the top
 # of app/api/routes/ai.py, and both claims are asserted in the test suite.
 app.include_router(ai.router, dependencies=[Depends(current_user)])
+app.include_router(notifications.router, dependencies=[Depends(current_user)])

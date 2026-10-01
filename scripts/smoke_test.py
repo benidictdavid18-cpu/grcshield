@@ -240,6 +240,12 @@ def main() -> int:
     if isinstance(documents, list) and documents:
         status, revisions = request(base, f"/documents/{documents[0]['document_ref']}/revisions", token=auditor)
         check("controlled revisions resolve", status == 200 and isinstance(revisions, list))
+    status, policy = request(base, "/maintenance/policy", token=auditor)
+    check("AI retention policy is readable", status == 200 and policy.get("ai_retention_days", 0) > 0)
+    status, inbox = request(base, "/notifications", token=auditor)
+    check("notification inbox is readable", status == 200 and isinstance(inbox, list))
+    status, plans = request(base, "/monitoring/plans", token=auditor)
+    check("measurement plans are readable", status == 200 and isinstance(plans, list))
 
     status, artifacts = request(base, "/evidence/EV-002/attachments", token=auditor)
     check("evidence attachment inventory resolves", status == 200 and isinstance(artifacts, list))
@@ -256,6 +262,23 @@ def main() -> int:
     check("treatment plans are readable", status == 200 and isinstance(plans, list))
     if plans:
         check("milestones fit the risk review checkpoint", all(m["due_date"] <= p["review_deadline"] for p in plans for m in p["milestones"]))
+
+    status, revisions = request(base, "/operations/revisions", token=auditor)
+    check("operational revisions are readable", status == 200 and isinstance(revisions, list))
+    status, obligations = request(base, "/obligations", token=auditor)
+    check("obligation register is readable", status == 200 and isinstance(obligations, list))
+    status, requirements = request(base, "/people/requirements", token=auditor)
+    check("competence requirements are readable", status == 200 and isinstance(requirements, list))
+    status, suppliers = request(base, "/suppliers", token=auditor)
+    check("supplier register is readable", status == 200 and isinstance(suppliers, list))
+    status, events = request(base, "/incidents", token=auditor)
+    check("incident register is readable", status == 200 and isinstance(events, list))
+    status, programmes = request(base, "/isms/assurance/programmes", token=auditor)
+    check("audit programmes are readable", status == 200 and isinstance(programmes, list))
+    status, categories = request(base, "/isms/assurance/review-input-categories", token=auditor)
+    check("management review requires structured inputs", status == 200 and len(categories) == 10 and "RISK_ASSESSMENT_TREATMENT" in categories)
+    status, verifications = request(base, "/isms/assurance/nonconformities/NC-001/verifications", token=auditor)
+    check("corrective verification history is readable", status == 200 and isinstance(verifications, list))
 
     status, objectives = request(base, "/isms/plans", token=auditor)
     check("objectives and planned changes are readable", status == 200 and isinstance(objectives, list))

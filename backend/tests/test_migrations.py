@@ -63,13 +63,13 @@ def migrated(tmp_path, monkeypatch):
 def test_the_chain_is_linear_with_no_gaps_or_branches():
     script = ScriptDirectory(str(BACKEND_ROOT / "alembic"))
     revisions = list(script.walk_revisions())
-    assert len(revisions) == 18
+    assert len(revisions) == 28
     # Newest first; each must point at its predecessor.
     ordered = [r.revision for r in revisions][::-1]
     assert ordered == [
-        "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010", "0011", "0012", "0013", "0014", "0015", "0016", "0017", "0018",
+        "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010", "0011", "0012", "0013", "0014", "0015", "0016", "0017", "0018", "0019", "0020", "0021", "0022", "0023", "0024", "0025", "0026", "0027", "0028",
     ]
-    assert script.get_current_head() == "0018"
+    assert script.get_current_head() == "0028"
     for revision in revisions:
         assert not isinstance(revision.down_revision, tuple), "no branching allowed"
 
@@ -78,7 +78,7 @@ def test_the_chain_runs_from_empty_to_head(migrated):
     version = migrated.connect().exec_driver_sql(
         "select version_num from alembic_version"
     ).scalar()
-    assert version == "0018"
+    assert version == "0028"
 
 
 def test_migrations_create_every_table_the_models_declare(migrated):

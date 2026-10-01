@@ -1,4 +1,13 @@
 from app.models.ai import AiFeature, AiInteraction, AiInteractionStatus
+from app.models.incidents import IncidentEntry, SecurityEvent  # noqa: F401
+from app.models.suppliers import Supplier, SupplierReview  # noqa: F401
+from app.models.people import CommunicationPlan, CompetenceEvaluation, CompetenceRequirement  # noqa: F401
+from app.models.obligations import Obligation, ObligationDecision  # noqa: F401
+from app.models.operations import ContinuityExercise, OperationalEvidence, OperationalReviewTask, RegisterRevision, RiskAsset  # noqa: F401
+from app.models.monitoring import MeasurementPlan, MonitoringObservation, RiskAssessmentSnapshot  # noqa: F401
+from app.models.notifications import Notification, NotificationRouting  # noqa: F401
+from app.models.maintenance import RetentionState  # noqa: F401
+from app.models.reference import ReferenceCounter  # noqa: F401
 from app.models.audit import (
     AuditFinding,
     ControlTest,
@@ -117,3 +126,7 @@ __all__ = [
     "SoARemediationLink",
     "SoARiskLink",
 ]
+
+from app.models.assurance import AuditProgramme, AssuranceCycle, AssuranceInput, AssuranceAction, CorrectiveVerification
+
+from app.models import constraint_parity  # noqa: E402,F401

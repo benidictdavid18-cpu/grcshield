@@ -1144,7 +1144,21 @@ def main(*, reapply_sample: bool = False, reason: str | None = None) -> None:
         from app.seed.treatment import seed_treatment
         seed_treatment(db)
         from app.seed.planning import seed_planning
+        from app.seed.assurance import seed_assurance
         seed_planning(db)
+        seed_assurance(db)
+        from app.seed.incidents import seed_incidents
+        seed_incidents(db)
+        from app.seed.suppliers import seed_suppliers
+        seed_suppliers(db)
+        from app.seed.people import seed_people
+        seed_people(db)
+        from app.seed.obligations import seed_obligations
+        seed_obligations(db)
+        from app.seed.operations import seed_operations
+        seed_operations(db)
+        from app.seed.monitoring import seed_monitoring
+        seed_monitoring(db)
         db.commit()
 
     excluded = sum(1 for c in iso.values() if not c.in_scope)

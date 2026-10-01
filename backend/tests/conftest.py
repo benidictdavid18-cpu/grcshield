@@ -20,6 +20,7 @@ os.environ["DATABASE_URL"] = "sqlite+pysqlite:///:memory:"
 # that snapshot: EXC-001 is expiring soon, not expired; one acceptance has lapsed, not
 # two. Pinned so the suite does not start failing on the day a seeded date passes.
 os.environ["AS_OF_DATE"] = "2026-09-04"
+os.environ["MAINTENANCE_ENABLED"] = "false"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -104,7 +105,21 @@ def engine():
         from app.seed.treatment import seed_treatment
         seed_treatment(db)
         from app.seed.planning import seed_planning
+        from app.seed.assurance import seed_assurance
         seed_planning(db)
+        seed_assurance(db)
+        from app.seed.incidents import seed_incidents
+        seed_incidents(db)
+        from app.seed.suppliers import seed_suppliers
+        seed_suppliers(db)
+        from app.seed.people import seed_people
+        seed_people(db)
+        from app.seed.obligations import seed_obligations
+        seed_obligations(db)
+        from app.seed.operations import seed_operations
+        seed_operations(db)
+        from app.seed.monitoring import seed_monitoring
+        seed_monitoring(db)
         db.commit()
 
     yield engine
@@ -248,3 +263,11 @@ def ai_service(ai_provider):
     fastapi_app.dependency_overrides[get_ai_service] = lambda: service
     yield service
     fastapi_app.dependency_overrides.pop(get_ai_service, None)
+
+
+@pytest.fixture(autouse=True)
+def reset_inference_limits():
+    from app.services.ai.limits import inference_limits
+    inference_limits.reset()
+    yield
+    inference_limits.reset()
