@@ -1,5 +1,8 @@
-from datetime import date,datetime
-from pydantic import BaseModel,ConfigDict,Field
+from datetime import date, datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
 class PlanIn(BaseModel):
     risk_ref: str
     title: str=Field(min_length=1,max_length=240)

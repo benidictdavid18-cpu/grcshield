@@ -37,7 +37,6 @@ from app.schemas.audit import (
 )
 from app.services import audit_trail
 from app.services.control_testing import (
-    CONCLUSION_TO_OPERATING,
     DesignEffectiveness,
     FindingSeverity,
     FindingSource,

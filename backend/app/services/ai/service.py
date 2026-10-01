@@ -18,7 +18,6 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from functools import lru_cache
 
-from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 

@@ -16,7 +16,6 @@ from sqlalchemy.orm import Session
 
 from app.models.audit import AuditFinding, ControlTest
 from app.models.kri import KriDefinition
-from app.services.acceptance import effective_state as effective_acceptance_state
 from app.models.privacy import RiskException
 from app.models.risk import Control, Risk, RiskAppetiteThreshold
 from app.models.soa import (
@@ -27,8 +26,8 @@ from app.models.soa import (
     RemediationStatus,
     SoAEntry,
 )
+from app.services.acceptance import effective_state as effective_acceptance_state
 from app.services.control_testing import FindingSeverity, OperatingEffectiveness
-from app.services.privacy_continuity import ExceptionStatus, exception_state
 
 # A control is "current" if it has been tested within this window.
 TEST_CURRENCY_DAYS = 365

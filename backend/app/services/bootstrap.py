@@ -1,8 +1,10 @@
 """The sample is initialization data, not a restart-time source of truth."""
 from sqlalchemy import select
-from app.models.bootstrap import SampleBootstrap
+
 from app.db.base import Base
 from app.models.audit_trail import AuditEvent
+from app.models.bootstrap import SampleBootstrap
+
 
 def prepare(db, *, reapply=False, reason=None, operator=None):
     row = db.scalar(select(SampleBootstrap).where(SampleBootstrap.id == 1).with_for_update())

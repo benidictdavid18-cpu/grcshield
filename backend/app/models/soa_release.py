@@ -1,8 +1,12 @@
 """Immutable SoA snapshots and attributable management sign-off."""
 from datetime import datetime
-from sqlalchemy import Boolean,CheckConstraint,DateTime,Integer,JSON,String,Text
-from sqlalchemy.orm import Mapped,mapped_column
+
+from sqlalchemy import JSON, Boolean, CheckConstraint, DateTime, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
+
 from app.db.base import Base
+
+
 class SoARelease(Base):
     __tablename__="soa_releases"
     __table_args__=(

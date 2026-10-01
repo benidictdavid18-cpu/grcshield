@@ -33,7 +33,6 @@ from app.reports.common import (
     page_furniture,
     styles,
 )
-from app.services.privacy_continuity import ExceptionStatus, exception_state
 from app.services.risk_scoring import CATEGORY_LABELS
 
 _TREATMENT = {

@@ -19,6 +19,7 @@ from app.core.rate_limit import FailureTracker, login_failures
 def tight_limit(monkeypatch):
     """Three failures in a ten-second window, on a clean tracker."""
     from types import SimpleNamespace
+
     from app.api.routes import auth as auth_route
     # Throttling logic must not depend on machine suspension or bcrypt wall time.
     monkeypatch.setattr(auth_route, "time", SimpleNamespace(monotonic=lambda: 100.0))

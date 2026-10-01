@@ -1,11 +1,13 @@
 import base64
 import hashlib
 from datetime import date
+
 import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+
 from app.models.attachment import EvidenceAttachment
-from app.models.user import User,Role
+from app.models.user import Role, User
 
 DATA=b"Sample / Portfolio Assessment. Attachment fixture for API verification."
 PAYLOAD={"version":"test-1","filename":"sample.txt","content_type":"text/plain","content_base64":base64.b64encode(DATA).decode(),"source":"Ephemeral test fixture, not control effectiveness evidence","retention_until":"2026-09-04","retention_reason":"Retain through the test assessment date."}

@@ -1104,8 +1104,9 @@ def seed_kris(db: Session) -> int:
 
 
 def main(*, reapply_sample: bool = False, reason: str | None = None) -> None:
-    from app.services.bootstrap import prepare
     import getpass
+
+    from app.services.bootstrap import prepare
     with SessionLocal() as db:
         if not prepare(db, reapply=reapply_sample, reason=reason, operator=getpass.getuser()):
             db.commit()
@@ -1143,8 +1144,8 @@ def main(*, reapply_sample: bool = False, reason: str | None = None) -> None:
         seed_releases(db)
         from app.seed.treatment import seed_treatment
         seed_treatment(db)
-        from app.seed.planning import seed_planning
         from app.seed.assurance import seed_assurance
+        from app.seed.planning import seed_planning
         seed_planning(db)
         seed_assurance(db)
         from app.seed.incidents import seed_incidents

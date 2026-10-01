@@ -70,7 +70,7 @@ def catalogue():
                 }
                 for variant in body["properties"]["content"]["variants"].values():
                     local = variant.pop("$defs", {})
-                    def resolve(v):
+                    def resolve(v, local=local):
                         if isinstance(v, list):
                             return [resolve(x) for x in v]
                         if isinstance(v, dict):

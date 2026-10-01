@@ -1,15 +1,17 @@
-from fastapi import APIRouter,Depends
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
 from app.api.deps import current_user
+from app.api.routes.acceptance import authorized
+from app.api.routes.context import commit
+from app.api.routes.provenance import require
 from app.db.session import get_db
 from app.models.soa_release import SoARelease
 from app.models.user import User
-from app.schemas.soa_release import ReleaseIn,ReleaseOut,ReleaseApprovalIn
+from app.schemas.soa_release import ReleaseApprovalIn, ReleaseIn, ReleaseOut
 from app.services import soa_releases
-from app.api.routes.provenance import require
-from app.api.routes.acceptance import authorized
-from app.api.routes.context import commit
+
 router=APIRouter(prefix="/soa-releases",tags=["SoA releases"])
 
 @router.get("",response_model=list[ReleaseOut])

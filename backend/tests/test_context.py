@@ -1,7 +1,9 @@
 from datetime import date
+
 import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+
 from app.models.context import ContextEntry
 
 PAYLOAD={"kind":"ISSUE","topic":"GENERAL","title":"A scoped issue","statement":"The author has identified an external dependency.","source":"Author review of the dependency inventory","owner":"Chief Operating Officer","review_date":"2027-01-31","relevance":"RELEVANT","decision_note":"The dependency affects the availability of the scoped service."}

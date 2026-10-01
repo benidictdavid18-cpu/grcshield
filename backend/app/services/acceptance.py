@@ -1,14 +1,16 @@
 """Attributable approval supplements, rather than rewrites, acceptance validators."""
 import hashlib
 import json
+
 from sqlalchemy import select
 from sqlalchemy.orm import object_session
+
 from app.core import clock
 from app.models.acceptance import AcceptanceAuthority, AcceptanceDecision
 from app.models.audit_trail import AuditAction
 from app.models.user import Role
-from app.services.privacy_continuity import ExceptionStatus, exception_state, validate_exception
 from app.services import audit_trail
+from app.services.privacy_continuity import ExceptionStatus, exception_state, validate_exception
 from app.services.provenance import ProofError
 
 

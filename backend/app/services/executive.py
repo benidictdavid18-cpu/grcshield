@@ -25,9 +25,8 @@ from app.models.soa import (
     RemediationItem,
     SoAEntry,
 )
-from app.services.control_testing import FindingSeverity
-from app.services.privacy_continuity import ExceptionStatus, exception_state
 from app.services.acceptance import covers
+from app.services.control_testing import FindingSeverity
 from app.services.risk_scoring import CATEGORY_LABELS, RiskBand
 
 _POSTURE = {

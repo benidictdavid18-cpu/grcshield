@@ -1,6 +1,9 @@
-from datetime import date,datetime
+from datetime import date, datetime
 from typing import Literal
-from pydantic import BaseModel,ConfigDict,Field,FiniteFloat
+
+from pydantic import BaseModel, ConfigDict, Field, FiniteFloat
+
+
 class ISMSPlanIn(BaseModel):
     kind: Literal["OBJECTIVE","CHANGE"]
     title: str=Field(min_length=1,max_length=240)

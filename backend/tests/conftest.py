@@ -104,8 +104,8 @@ def engine():
         seed_releases(db)
         from app.seed.treatment import seed_treatment
         seed_treatment(db)
-        from app.seed.planning import seed_planning
         from app.seed.assurance import seed_assurance
+        from app.seed.planning import seed_planning
         seed_planning(db)
         seed_assurance(db)
         from app.seed.incidents import seed_incidents

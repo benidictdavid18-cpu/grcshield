@@ -1,16 +1,24 @@
-from fastapi import APIRouter,Depends
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
 from app.api.deps import current_user
-from app.db.session import get_db
-from app.models.planning import ISMSPlan,PlanEvaluation
-from app.models.user import User
-from app.schemas.planning import ISMSPlanIn,ISMSPlanOut,EvaluationIn,EvaluationOut,ImplementationIn
-from app.schemas.context import ApprovalIn
-from app.services import planning
-from app.api.routes.provenance import require
 from app.api.routes.acceptance import authorized
 from app.api.routes.context import commit
+from app.api.routes.provenance import require
+from app.db.session import get_db
+from app.models.planning import ISMSPlan, PlanEvaluation
+from app.models.user import User
+from app.schemas.context import ApprovalIn
+from app.schemas.planning import (
+    EvaluationIn,
+    EvaluationOut,
+    ImplementationIn,
+    ISMSPlanIn,
+    ISMSPlanOut,
+)
+from app.services import planning
+
 router=APIRouter(prefix="/isms/plans",tags=["ISMS objectives and changes"])
 def load(db,ref): return require(db.scalar(select(ISMSPlan).where(ISMSPlan.plan_ref==ref).with_for_update()))
 

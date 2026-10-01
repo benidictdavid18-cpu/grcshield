@@ -2,7 +2,7 @@ from collections import Counter
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, object_session, selectinload
 
 from app.api.deps import current_user
 from app.db.session import get_db
@@ -27,7 +27,6 @@ from app.schemas.risk import (
     ScoreOut,
 )
 from app.services import audit_trail, provenance
-from sqlalchemy.orm import object_session
 from app.services.risk_scoring import (
     CATEGORY_LABELS,
     RiskBand,

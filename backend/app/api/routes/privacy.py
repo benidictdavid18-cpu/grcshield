@@ -39,7 +39,7 @@ from app.schemas.privacy import (
     PrivacyOverviewOut,
     RopaOut,
 )
-from app.services import audit_trail, acceptance
+from app.services import acceptance, audit_trail
 from app.services.control_testing import OperatingEffectiveness
 from app.services.privacy_continuity import (
     EXPIRY_WARNING_DAYS,

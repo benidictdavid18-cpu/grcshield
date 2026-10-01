@@ -1,12 +1,15 @@
 from datetime import date
+
 import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+
 from app.models.acceptance import AcceptanceAuthority, AcceptanceDecision
 from app.models.privacy import RiskException
 from app.models.user import User
 from app.services import acceptance
 from tests.test_registers_api import VALID_EXCEPTION
+
 
 def grant_for_test(db):
     user = db.scalar(select(User).where(User.username == "isms.manager"))

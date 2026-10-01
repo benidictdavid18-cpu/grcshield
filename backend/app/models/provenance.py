@@ -1,7 +1,9 @@
 """Proof and reassessment records; no automatic compliance decisions."""
 from sqlalchemy import CheckConstraint, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.db.base import Base
+
 
 class TestDisposition(Base):
     __tablename__ = "test_dispositions"

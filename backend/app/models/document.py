@@ -1,8 +1,21 @@
 """Controlled documents, retained revisions and version-specific acknowledgements."""
 from datetime import date
-from sqlalchemy import CheckConstraint,Date,ForeignKey,Index,Integer,String,Text,UniqueConstraint,text
-from sqlalchemy.orm import Mapped,mapped_column
+
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
 from app.db.base import Base
+
 
 class ControlledDocument(Base):
     __tablename__="controlled_documents"

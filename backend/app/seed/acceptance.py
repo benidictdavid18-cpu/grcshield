@@ -1,7 +1,9 @@
 """Preserve authored fictional decisions; never invent an authenticated signer."""
 from sqlalchemy import select
+
 from app.models.acceptance import AcceptanceDecision
 from app.services.acceptance import digest
+
 
 def seed_decisions(db, exceptions):
     for row in exceptions.values():

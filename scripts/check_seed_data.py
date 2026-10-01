@@ -606,34 +606,40 @@ print("Acceptance provenance : authored sample decisions only; no invented accou
 
 print("Bootstrap policy      : normal startup preserves existing sample edits")
 
-from app.seed.context import CONTEXT_SAMPLE
+from app.seed.context import CONTEXT_SAMPLE  # noqa: E402
+
 assert len({x[0] for x in CONTEXT_SAMPLE}) == len(CONTEXT_SAMPLE)
 assert any(x[2] == "CLIMATE" and "TODO AUTHOR:BENNY" in x[7] for x in CONTEXT_SAMPLE)
 assert all(x[6] is None or x[6] in {risk.risk_ref for risk in RISKS} for x in CONTEXT_SAMPLE)
 print("Context sample        : draft facts, real risk links, unresolved climate judgment")
 
-from app.seed.documents import POLICY_CONTENT
+from app.seed.documents import POLICY_CONTENT  # noqa: E402
+
 assert "TODO AUTHOR:BENNY" in POLICY_CONTENT
 assert any(e.ref == "EV-029" for e in EVIDENCE)
 print("Document sample       : policy content deliberately pending author input")
 
-from app.seed.attachments import ATTACHMENT_SEED_POLICY
+from app.seed.attachments import ATTACHMENT_SEED_POLICY  # noqa: E402
+
 assert "missing attachments" in ATTACHMENT_SEED_POLICY
 print("Attachment sample     : no fabricated binary proof; upload actual source artifacts")
 
 assert {entry.ref for entry in SOA_ENTRIES} == {control.ref for control in ANNEX_A_CONTROLS}
 print("SoA release policy    : exact 93-control snapshot; legacy source stays draft")
 
-from app.seed.treatment import TREATMENT_HINT
+from app.seed.treatment import TREATMENT_HINT  # noqa: E402
+
 assert "TODO AUTHOR:BENNY" in TREATMENT_HINT
 assert next(r for r in RISKS if r.risk_ref == "RISK-004").next_review is not None
 print("Treatment sample      : real risk/control/remediation; date conflict awaits author")
 
-from app.seed.planning import OBJECTIVE_HINT, CHANGE_HINT, SCALE_HINT
+from app.seed.planning import CHANGE_HINT, OBJECTIVE_HINT, SCALE_HINT  # noqa: E402
+
 assert all("TODO AUTHOR:BENNY" in hint for hint in (OBJECTIVE_HINT, CHANGE_HINT, SCALE_HINT))
 print("ISMS planning sample  : commitments and scale guidance await author judgment")
 
-from app.seed.assurance import PROGRAMME_HINT
+from app.seed.assurance import PROGRAMME_HINT  # noqa: E402
+
 assert "TODO AUTHOR:BENNY" in PROGRAMME_HINT
 print("Assurance sample      : programme decisions pending; historical records not re-signed")
 
@@ -646,38 +652,47 @@ if failures:
 
 
 from app.seed.incidents import INCIDENT_HINT  # noqa: E402
+
 assert "TODO AUTHOR:BENNY" in INCIDENT_HINT
 print("Incident sample       : TEST-008 observation awaits triage, not a declared breach")
 
 from app.seed.suppliers import SUPPLIER_HINT  # noqa: E402
+
 assert "TODO AUTHOR:BENNY" in SUPPLIER_HINT
 print("Supplier sample       : AWS contract review remains an author task")
 
 from app.seed.people import COMPETENCE_HINT  # noqa: E402
+
 assert "TODO AUTHOR:BENNY" in COMPETENCE_HINT
 print("Competence sample     : no invented employee evaluations")
 
 from app.seed.obligations import OBLIGATION_HINT  # noqa: E402
+
 assert "TODO AUTHOR:BENNY" in OBLIGATION_HINT
 print("Obligation sample     : applicability awaits authorized review")
 
 from app.seed.operations import OPERATIONS_HINT  # noqa: E402
+
 assert "TODO AUTHOR:BENNY" in OPERATIONS_HINT
 print("Operational sample    : retained draft; no invented exercise evidence")
 
 from app.seed.monitoring import MONITORING_HINT  # noqa: E402
+
 assert "TODO AUTHOR:BENNY" in MONITORING_HINT
 print("Monitoring sample     : collection plans unconfirmed; observations not backfilled")
 
 from app.seed.notifications import NOTIFICATION_HINT  # noqa: E402
+
 assert "TODO AUTHOR:BENNY" in NOTIFICATION_HINT
 print("Notification sample   : no recipient assignment invented")
 
 from app.seed.maintenance import MAINTENANCE_POLICY  # noqa: E402
+
 assert "audit" in MAINTENANCE_POLICY
 print("Maintenance sample    : no fictitious pruning runs")
 
 from app.seed.references import REFERENCE_POLICY  # noqa: E402
+
 assert "transactional" in REFERENCE_POLICY
 print("Reference policy      : counters preserve authored high-water marks")
 

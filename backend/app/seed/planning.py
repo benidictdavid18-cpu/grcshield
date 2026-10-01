@@ -1,11 +1,13 @@
 """Measurement definitions exist; new leadership commitments are not invented."""
 from datetime import date
+
 from sqlalchemy import select
-from app.models.planning import ISMSPlan
+
 from app.models.context import ContextEntry
-from app.models.risk import Risk
+from app.models.document import ControlledDocument, DocumentRevision
 from app.models.kri import KriDefinition
-from app.models.document import ControlledDocument,DocumentRevision
+from app.models.planning import ISMSPlan
+from app.models.risk import Risk
 from app.services.documents import digest
 
 OBJECTIVE_HINT="TODO AUTHOR:BENNY - agree the measurable objective target, due date and committed resources; KRI thresholds alone are not leadership approval."

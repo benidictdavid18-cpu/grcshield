@@ -1,9 +1,10 @@
 """Context review makes judgments explicit; scope approval freezes its inputs."""
 from sqlalchemy import select
+
 from app.core import clock
+from app.models.audit_trail import AuditAction
 from app.models.context import ContextEntry, ScopeRevision
 from app.models.risk import Risk
-from app.models.audit_trail import AuditAction
 from app.services import audit_trail
 from app.services.provenance import ProofError
 

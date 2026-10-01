@@ -1,5 +1,8 @@
 from datetime import datetime
-from pydantic import BaseModel,ConfigDict,Field
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
 class ReleaseIn(BaseModel):
     version: str=Field(min_length=1,max_length=32)
     change_note: str=Field(min_length=1)

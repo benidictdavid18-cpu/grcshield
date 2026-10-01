@@ -1,8 +1,11 @@
 """Approval authority and retained acceptance decisions."""
+from datetime import date
+
 from sqlalchemy import CheckConstraint, Date, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
-from datetime import date
+
 from app.db.base import Base
+
 
 class AcceptanceAuthority(Base):
     __tablename__ = "acceptance_authorities"

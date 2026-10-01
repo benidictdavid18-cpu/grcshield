@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
+
 class ProofIn(BaseModel):
     test_ref: str
     note: str = Field(min_length=1)

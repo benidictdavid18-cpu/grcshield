@@ -1,8 +1,22 @@
 """Treatment commitments, milestones and evidence-backed completion."""
-from datetime import date,datetime
-from sqlalchemy import CheckConstraint,Date,DateTime,ForeignKey,ForeignKeyConstraint,Integer,JSON,String,Text,UniqueConstraint
-from sqlalchemy.orm import Mapped,mapped_column
+from datetime import date, datetime
+
+from sqlalchemy import (
+    JSON,
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
 from app.db.base import Base
+
 
 class TreatmentPlan(Base):
     __tablename__="treatment_plans"

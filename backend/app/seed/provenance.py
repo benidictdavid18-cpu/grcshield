@@ -1,7 +1,9 @@
 """Bind only workpapers that exist; never invent proof for library-only claims."""
 from sqlalchemy import select
+
 from app.models.risk import RiskControl
 from app.services.provenance import BASIS_RANK, TEST_RANK, TODO
+
 
 def seed_proofs(db, tests):
     for link in db.scalars(select(RiskControl)):

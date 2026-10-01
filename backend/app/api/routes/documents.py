@@ -1,15 +1,17 @@
-from fastapi import APIRouter,Depends,HTTPException,Response
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
 from app.api.deps import current_user
-from app.db.session import get_db
-from app.models.user import User
-from app.models.document import ControlledDocument,DocumentRevision,DocumentAcknowledgement
-from app.schemas.document import DocumentIn,DocumentOut,RevisionIn,RevisionOut
-from app.schemas.context import ApprovalIn
-from app.services import documents
-from app.api.routes.provenance import require,invoke
 from app.api.routes.context import commit
+from app.api.routes.provenance import invoke, require
+from app.db.session import get_db
+from app.models.document import ControlledDocument, DocumentAcknowledgement, DocumentRevision
+from app.models.user import User
+from app.schemas.context import ApprovalIn
+from app.schemas.document import DocumentIn, DocumentOut, RevisionIn, RevisionOut
+from app.services import documents
+
 router=APIRouter(tags=["controlled documents"])
 
 def get_document(db,ref): return require(db.scalar(select(ControlledDocument).where(ControlledDocument.document_ref==ref)))

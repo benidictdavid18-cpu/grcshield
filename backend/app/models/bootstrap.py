@@ -1,7 +1,10 @@
 """One-time sample initialization boundary."""
 from sqlalchemy import CheckConstraint, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.db.base import Base
+
+
 class SampleBootstrap(Base):
     __tablename__ = "sample_bootstrap"
     __table_args__ = (

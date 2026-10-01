@@ -1,11 +1,13 @@
 from datetime import date
+
 import pytest
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.models.treatment import TreatmentPlan,TreatmentMilestone
-from app.models.risk import Risk
+from sqlalchemy.orm import Session
+
 from app.models.acceptance import AcceptanceAuthority
+from app.models.risk import Risk
+from app.models.treatment import TreatmentMilestone, TreatmentPlan
 from app.models.user import User
 from tests.test_migrations import migrated  # noqa: F401 - real migrated database fixture
 
@@ -73,7 +75,7 @@ def test_database_refuses_milestone_after_its_plan_deadline(db_session):
         db_session.add(TreatmentMilestone(plan_id=plan.id,review_deadline=plan.review_deadline,milestone_ref="BAD",title="Too late",owner="Owner",due_date=date(2027,1,1),status="OPEN"))
         db_session.flush()
 
-def test_migrated_database_enforces_cross_record_risk_review(migrated,db_session):
+def test_migrated_database_enforces_cross_record_risk_review(migrated, db_session):  # noqa: F811
     seed=db_session.scalar(select(Risk).where(Risk.risk_ref=="RISK-004"))
     values={c.name:getattr(seed,c.name) for c in Risk.__table__.columns}
     with Session(migrated) as db:

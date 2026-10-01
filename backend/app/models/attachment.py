@@ -1,8 +1,21 @@
 """Bounded artifact bytes are transactional with their metadata and retention record."""
 from datetime import date
-from sqlalchemy import Boolean,CheckConstraint,Date,ForeignKey,Integer,LargeBinary,String,Text,UniqueConstraint
-from sqlalchemy.orm import Mapped,mapped_column
+
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Date,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
 from app.db.base import Base
+
 
 class EvidenceAttachment(Base):
     __tablename__="evidence_attachments"

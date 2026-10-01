@@ -1,8 +1,21 @@
 """Owned objectives and deliberate changes to the management system."""
-from datetime import date,datetime
-from sqlalchemy import CheckConstraint,Date,DateTime,Float,ForeignKey,Integer,JSON,String,Text
-from sqlalchemy.orm import Mapped,mapped_column
+from datetime import date, datetime
+
+from sqlalchemy import (
+    JSON,
+    CheckConstraint,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
 from app.db.base import Base
+
 
 class ISMSPlan(Base):
     __tablename__="isms_plans"

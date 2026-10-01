@@ -1,6 +1,8 @@
 from datetime import date
 from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
+
 
 class ContextIn(BaseModel):
     kind: Literal["ISSUE", "PARTY_REQUIREMENT", "PROCESS"]

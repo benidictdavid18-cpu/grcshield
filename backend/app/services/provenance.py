@@ -1,14 +1,26 @@
 """Test provenance supplements ADR-008; it never computes a residual score."""
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+
 from app.models.audit import ControlTest
+from app.models.audit_trail import AuditAction
+from app.models.privacy import (
+    BiaControlLink,
+    BusinessImpactAnalysis,
+    Dpia,
+    DpiaRiskLink,
+    RopaControlLink,
+    RopaEntry,
+)
 from app.models.provenance import Reassessment, TestDisposition
 from app.models.risk import RiskControl
-from app.models.soa import Evidence, SoAEntry, SoAControlLink
-from app.models.privacy import RopaEntry, RopaControlLink, Dpia, DpiaRiskLink, BusinessImpactAnalysis, BiaControlLink
-from app.models.audit_trail import AuditAction
+from app.models.soa import SoAControlLink, SoAEntry
 from app.services import audit_trail
-from app.services.control_testing import CONCLUSION_TO_OPERATING, TestConclusion, OperatingEffectiveness, validate_effectiveness
+from app.services.control_testing import (
+    CONCLUSION_TO_OPERATING,
+    OperatingEffectiveness,
+    TestConclusion,
+    validate_effectiveness,
+)
 
 BASIS_RANK = {"TESTED_INEFFECTIVE": 0, "TESTED_WITH_EXCEPTIONS": 1, "TESTED_EFFECTIVE": 2}
 TEST_RANK = {"FAIL": 0, "PASS_WITH_EXCEPTIONS": 1, "PASS": 2}
@@ -40,12 +52,12 @@ def bind_proof(db, link, test, note, actor):
 
 def queue_impacts(db, test, reason):
     links = db.scalars(select(RiskControl).where(RiskControl.control_id == test.control_id)).all()
-    targets = {("RISK", l.risk.risk_ref): l.risk.owner_role for l in links}
+    targets = {("RISK", link.risk.risk_ref): link.risk.owner_role for link in links}
     for row in db.scalars(select(SoAEntry).join(SoAControlLink).where(SoAControlLink.control_id == test.control_id)):
         targets[("SOA", row.control_ref)] = row.owner
     for row in db.scalars(select(RopaEntry).join(RopaControlLink).where(RopaControlLink.control_id == test.control_id)):
         targets[("ROPA", row.ropa_ref)] = row.owner_role
-    ids = [l.risk_id for l in links]
+    ids = [link.risk_id for link in links]
     for row in db.scalars(select(Dpia).join(DpiaRiskLink).where(DpiaRiskLink.risk_id.in_(ids))).unique():
         targets[("DPIA", row.dpia_ref)] = row.assessed_by
     for row in db.scalars(select(BusinessImpactAnalysis).join(BiaControlLink).where(BiaControlLink.control_id == test.control_id)):

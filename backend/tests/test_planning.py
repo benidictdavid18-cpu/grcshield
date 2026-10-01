@@ -1,10 +1,12 @@
 from datetime import date
+
 import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from app.models.planning import ISMSPlan
-from app.models.context import ContextEntry
+
 from app.models.acceptance import AcceptanceAuthority
+from app.models.context import ContextEntry
+from app.models.planning import ISMSPlan
 from app.models.user import User
 
 PLAN={"kind":"OBJECTIVE","title":"A measurable security objective","owner":"Head of Engineering","resources":"One engineer and the approved review time.","rationale":"Address the reviewed customer requirement.","context_ref":"CTX-002","risk_ref":"RISK-004","kri_ref":"KRI-001","due_date":"2026-12-31","measure_definition":"Percentage of the explicitly scoped privileged population with MFA.","target_value":100,"direction":"HIGHER_IS_BETTER"}

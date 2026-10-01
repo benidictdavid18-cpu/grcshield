@@ -2,10 +2,12 @@
 import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from app.models.risk import RiskControl, Risk, Control
+from test_testing_api import BASE_TEST
+
 from app.models.audit import ControlTest
 from app.models.provenance import Reassessment
-from test_testing_api import BASE_TEST
+from app.models.risk import Control, Risk, RiskControl
+
 
 def control(client, risk, ref):
     return next(c for c in client.get(f"/risks/{risk}").json()["controls"] if c["control_id"] == ref)

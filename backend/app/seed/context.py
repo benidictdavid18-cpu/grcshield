@@ -1,10 +1,12 @@
 """Facts are copied from SCOPE.md; new judgments await the author."""
 from datetime import date
+
 from sqlalchemy import select
-from app.models.context import ContextEntry,ScopeRevision
+
+from app.models.context import ContextEntry, ScopeRevision
 from app.models.risk import Risk
-from app.services.context import FIELDS
 from app.services.audit_trail import snapshot
+from app.services.context import FIELDS
 
 CONTEXT_SAMPLE = [
     ("CTX-001","ISSUE","GENERAL","Single production region","All production infrastructure is in AWS eu-west-1; RISK-007 records regional outage exposure.","docs/SCOPE.md; RISK-007","RISK-007","TODO AUTHOR:BENNY - confirm how regional concentration shapes the ISMS context."),

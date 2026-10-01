@@ -1,8 +1,11 @@
 """Context decisions and immutable approved scope snapshots (clauses 4.1–4.4)."""
 from datetime import date
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Integer, JSON, String, Text
+
+from sqlalchemy import JSON, CheckConstraint, Date, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.db.base import Base
+
 
 class ContextEntry(Base):
     __tablename__ = "isms_context"
