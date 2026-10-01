@@ -300,8 +300,8 @@ consistency sweep, and it is the feature to look at first.
 
 **The whole feature is optional.** With `AI_ENABLED=false`, or with Ollama simply not
 running, every register, report, validation rule and screen behaves exactly as it does
-without it. That is asserted rather than asserted-to: the smoke test passes 83 checks
-with Ollama running and 79 with it stopped, and the difference is only the checks that
+without it. That is asserted rather than asserted-to: the smoke test passes 104 checks
+with the assistant disabled, and more when it is running — the difference is only the checks that
 exist to test the assistant itself.
 
 ### What the AI is doing
@@ -511,7 +511,7 @@ review. Keeping inference local removes the question rather than answering it.
 ## Verification
 
 ```bash
-# 419 tests — rules, API contracts, the migration chain, the audit trail, hardening, and the AI layer
+# 547 tests — rules, API contracts, the migration chain, the audit trail, hardening, and the AI layer
 cd backend && pytest -q
 
 # Lint: import order, unused imports, bare re-raises
@@ -561,7 +561,7 @@ present in migrations and absent from the models.
 
 ```
 backend/
-  alembic/versions/     9 migrations
+  alembic/versions/     28 migrations
   app/
     api/routes/         auth, frameworks, risks, soa, testing, isms, privacy, metrics,
                         reports, ai, audit_trail
@@ -575,7 +575,7 @@ backend/
     services/           risk_scoring, soa_validation, control_testing, privacy_continuity,
                         kri_engine, executive, audit_trail
       ai/               provider, ollama, context, prompts, response, guardrails, service
-  tests/                419 tests
+  tests/                547 tests
 frontend/
   Dockerfile            three stages: dev (Vite), build, serve (nginx)
   nginx.conf            static bundle, /api proxy, the page's own security headers
@@ -636,7 +636,7 @@ plausible.
   Desktop crashes at startup there with an unrelated fault, so the compose file and the
   Dockerfiles are exercised by the `compose` job in
   [`.github/workflows/ci.yml`](.github/workflows/ci.yml): build, start, wait for
-  `/health` to report seeded, run the 79 smoke checks against PostgreSQL, tear down.
+  `/health` to report seeded, run the 104 smoke checks against PostgreSQL, tear down.
   Locally, everything is verified against SQLite.
 - **No account lockout, password reset, or MFA on this application.** See
   [SECURITY.md](SECURITY.md) for the complete list and the reasoning.
