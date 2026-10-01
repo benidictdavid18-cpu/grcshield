@@ -1,3 +1,5 @@
+import { useViewState, useViewSelection } from '../useViewState'
+import { LiveTable } from '../LiveTable'
 import { useMemo, useState } from 'react'
 
 import { api, openReport, type ImplementationStatus, type SoASummary } from '../api'
@@ -25,11 +27,15 @@ export function SoA() {
   const [version, setVersion] = useState(0)
   const overview = useAsync(() => api.soaOverview(), [version])
   const entries = useAsync(() => api.soa(), [version])
-  const [applicability, setApplicability] = useState<ApplicabilityFilter>('all')
-  const [theme, setTheme] = useState('all')
-  const [query, setQuery] = useState('')
-  const [sortKey, setSortKey] = useState<SortKey>('ref')
-  const [selected, setSelected] = useState<string | null>(null)
+  const [applicability, setApplicability] = useViewState<ApplicabilityFilter>(
+    'applicability',
+    'all',
+    ['all', 'applicable', 'excluded', 'gaps'],
+  )
+  const [theme, setTheme] = useViewState<string>('theme', 'all')
+  const [query, setQuery] = useViewState<string>('query', '')
+  const [sortKey, setSortKey] = useViewState<SortKey>('order', 'ref', ['ref', 'status', 'owner'])
+  const [selected, setSelected] = useViewSelection('detail')
 
   const filtered = useMemo(() => {
     const rows = (entries.data ?? []).filter((entry) => {
@@ -77,9 +83,9 @@ export function SoA() {
       <div className="library-main">
         <h1>Statement of Applicability</h1>
         <p className="lede">
-          Required by ISO/IEC 27001:2022 Clause 6.1.3 d). One row for every Annex A control,
-          each with an applicability decision and a justification that names a driver — a risk,
-          a law, or a contract. "Required by ISO 27001" is circular and the API rejects it.
+          Required by ISO/IEC 27001:2022 Clause 6.1.3 d). One row for every Annex A control, each
+          with an applicability decision and a justification that names a driver — a risk, a law, or
+          a contract. "Required by ISO 27001" is circular and the API rejects it.
         </p>
 
         {summary && (
@@ -107,7 +113,11 @@ export function SoA() {
               </div>
             </div>
 
-            <p className="muted">{summary.approval_state === 'APPROVED' ? `Approved release ${summary.approved_release_version}` : 'Working draft — changes require release approval.'}</p>
+            <p className="muted">
+              {summary.approval_state === 'APPROVED'
+                ? `Approved release ${summary.approved_release_version}`
+                : 'Working draft — changes require release approval.'}
+            </p>
             <div className="quality-strip">
               <span>
                 <strong>{summary.open_remediation}</strong> open remediation
@@ -119,8 +129,7 @@ export function SoA() {
                 <strong>{summary.expired_evidence}</strong> expired evidence
               </span>
               <span className={summary.implemented_without_evidence > 0 ? 'is-bad' : ''}>
-                <strong>{summary.implemented_without_evidence}</strong> implemented without
-                evidence
+                <strong>{summary.implemented_without_evidence}</strong> implemented without evidence
               </span>
               <span className={summary.justifications_outstanding > 0 ? 'is-todo' : ''}>
                 <strong>{summary.justifications_outstanding}</strong> justifications outstanding
@@ -177,7 +186,7 @@ export function SoA() {
           <span className="filter-count">{filtered.length} shown</span>
         </div>
 
-        {entries.loading && <p className="empty">Loading the SoA…</p>}
+        {entries.loading && <p className="skeleton" role="status">Loading the SoA…</p>}
 
         {grouped.map(([themeRef, rows]) => {
           const themeSummary = summary?.themes.find((t) => t.theme === themeRef)
@@ -192,7 +201,16 @@ export function SoA() {
                   </span>
                 )}
               </h2>
-              <table>
+              <LiveTable id={`soa-${themeRef}`}>
+                <thead>
+                  <tr>
+                    <th>Reference</th>
+                    <th>Control / owner</th>
+                    <th>Links</th>
+                    <th>Applicability</th>
+                    <th>Implementation</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {rows.map((entry) => (
                     <tr
@@ -232,16 +250,14 @@ export function SoA() {
                         </span>
                       </td>
                       <td className="cell-status">
-                        <span
-                          className={`impl impl-${entry.implementation_status.toLowerCase()}`}
-                        >
+                        <span className={`impl impl-${entry.implementation_status.toLowerCase()}`}>
                           {IMPLEMENTATION_LABEL[entry.implementation_status]}
                         </span>
                       </td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </LiveTable>
             </div>
           )
         })}

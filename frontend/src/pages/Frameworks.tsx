@@ -12,7 +12,7 @@ const SCOPE_LABEL: Record<ScopeStatus, string> = {
 export function Frameworks() {
   const { data, error, loading } = useAsync(() => api.frameworks(), [])
 
-  if (loading) return <p className="empty">Loading frameworks…</p>
+  if (loading) return <p className="skeleton" role="status">Loading frameworks…</p>
   if (error) return <p className="error">Could not load frameworks: {error}</p>
   if (!data) return null
 
@@ -26,13 +26,18 @@ export function Frameworks() {
 
       <div className="cards">
         {data.map((framework) => (
-          <article key={framework.code} className={`card scope-${framework.scope_status.toLowerCase()}`}>
+          <article
+            key={framework.code}
+            className={`card scope-${framework.scope_status.toLowerCase()}`}
+          >
             <div className="card-head">
               <span className={`badge badge-${framework.scope_status.toLowerCase()}`}>
                 {SCOPE_LABEL[framework.scope_status]}
               </span>
               <span className="card-count">
-                {framework.control_count > 0 ? `${framework.control_count} controls` : 'no catalogue'}
+                {framework.control_count > 0
+                  ? `${framework.control_count} controls`
+                  : 'no catalogue'}
               </span>
             </div>
             <h2>{framework.name}</h2>

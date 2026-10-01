@@ -100,6 +100,11 @@ export interface RiskSummary {
 }
 
 export interface LinkedControl {
+  supporting_test_ref?: string | null
+  proof_state?: string
+  proof_note?: string | null
+  test_period_start?: string | null
+  test_period_end?: string | null
   control_id: string
   title: string
   control_family: string
@@ -146,16 +151,8 @@ export interface Appetite {
   last_reviewed: string | null
 }
 
-export type ImplementationStatus =
-  | 'NOT_IMPLEMENTED'
-  | 'PARTIALLY_IMPLEMENTED'
-  | 'IMPLEMENTED'
-export type RemediationStatus =
-  | 'OPEN'
-  | 'IN_PROGRESS'
-  | 'BLOCKED'
-  | 'COMPLETED'
-  | 'CANCELLED'
+export type ImplementationStatus = 'NOT_IMPLEMENTED' | 'PARTIALLY_IMPLEMENTED' | 'IMPLEMENTED'
+export type RemediationStatus = 'OPEN' | 'IN_PROGRESS' | 'BLOCKED' | 'COMPLETED' | 'CANCELLED'
 export type RemediationPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
 
 export interface SoASummary {
@@ -725,7 +722,13 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     handleUnauthorised()
     throw new Error('Your session has expired. Please sign in again.')
   }
-  if (response.status === 422 || response.status === 403 || response.status === 404) {
+  if (
+    response.status === 422 ||
+    response.status === 403 ||
+    response.status === 404 ||
+    response.status === 409 ||
+    response.status === 429
+  ) {
     // These carry a `detail` worth showing: the rule that refused the write, the role
     // that is not allowed to, or the record that does not exist.
     let detail: unknown = null
@@ -743,9 +746,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return (await response.json()) as T
 }
 
-const get = <T,>(path: string) => request<T>('GET', path)
+const get = <T>(path: string) => request<T>('GET', path)
 
 export const api = {
+  write: <T = unknown>(method: 'POST' | 'PATCH' | 'PUT', path: string, body?: unknown) =>
+    request<T>(method, path, body),
+  read: <T = unknown>(path: string) => get<T>(path),
   health: () => get<Health>('/health'),
   frameworks: () => get<Framework[]>('/frameworks'),
   framework: (code: string) => get<FrameworkDetail>(`/frameworks/${code}`),

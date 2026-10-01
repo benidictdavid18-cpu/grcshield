@@ -1,4 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useViewState, useViewSelection } from '../useViewState'
+import { Reference } from '../RecordDrawer'
+import { useDrawerAccessibility } from '../RecordDrawer'
+import { LiveTable } from '../LiveTable'
+import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 import { api, type Control, type MappingRelationship } from '../api'
@@ -12,18 +16,23 @@ const RELATIONSHIP_HINT: Record<MappingRelationship, string> = {
   SUPPORTING: 'Contributes evidence but is not the primary control tested.',
 }
 
-function ControlDrawer({ framework, controlRef, onClose }: {
+function ControlDrawer({
+  framework,
+  controlRef,
+  onClose,
+}: {
   framework: string
   controlRef: string
   onClose: () => void
 }) {
+  const drawerRef = useDrawerAccessibility(onClose)
   const { data, error, loading } = useAsync(
     () => api.control(framework, controlRef),
     [framework, controlRef],
   )
 
   return (
-    <aside className="drawer">
+    <aside ref={drawerRef} className="drawer">
       <div className="drawer-head">
         <h2>{controlRef}</h2>
         <button type="button" onClick={onClose} aria-label="Close">
@@ -31,7 +40,7 @@ function ControlDrawer({ framework, controlRef, onClose }: {
         </button>
       </div>
 
-      {loading && <p className="empty">Loading…</p>}
+      {loading && <p className="skeleton" role="status">Loading…</p>}
       {error && <p className="error">{error}</p>}
 
       {data && (
@@ -63,7 +72,7 @@ function ControlDrawer({ framework, controlRef, onClose }: {
               {data.mappings.map((mapping) => (
                 <li key={mapping.control_ref}>
                   <div className="mapping-head">
-                    <code>{mapping.control_ref}</code>
+                    <Reference value={mapping.control_ref} />
                     <span className={`rel rel-${mapping.relationship_type.toLowerCase()}`}>
                       {mapping.relationship_type.toLowerCase()}
                     </span>
@@ -83,9 +92,9 @@ function ControlDrawer({ framework, controlRef, onClose }: {
 export function ControlLibrary() {
   const [searchParams, setSearchParams] = useSearchParams()
   const framework = searchParams.get('framework') ?? 'ISO27001_2022'
-  const [query, setQuery] = useState('')
-  const [scope, setScope] = useState<ScopeFilter>('all')
-  const [selected, setSelected] = useState<string | null>(null)
+  const [query, setQuery] = useViewState<string>('query', '')
+  const [scope, setScope] = useViewState<ScopeFilter>('scope', 'all', ['all','in','out'])
+  const [selected, setSelected] = useViewSelection('detail')
 
   const detail = useAsync(() => api.framework(framework), [framework])
   const controls = useAsync(() => api.controls(framework), [framework])
@@ -176,14 +185,21 @@ export function ControlLibrary() {
           <span className="filter-count">{filtered.length} shown</span>
         </div>
 
-        {controls.loading && <p className="empty">Loading controls…</p>}
+        {controls.loading && <p className="skeleton" role="status">Loading controls…</p>}
 
         {grouped.map(([groupRef, group]) => (
           <div key={groupRef} className="control-group">
             <h2>
               {groupRef} <span>{group.title}</span>
             </h2>
-            <table>
+            <LiveTable id={`controls-${framework}-${groupRef}`}>
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Control</th>
+                  <th>Scope</th>
+                </tr>
+              </thead>
               <tbody>
                 {group.rows.map((control) => (
                   <tr
@@ -210,7 +226,7 @@ export function ControlLibrary() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </LiveTable>
           </div>
         ))}
 

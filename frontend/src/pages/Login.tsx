@@ -84,8 +84,8 @@ export function Login() {
             </button>
           ))}
           <p className="muted">
-            The auditor account can read everything and change nothing — which is only
-            meaningful because unauthenticated reads are refused outright.
+            The auditor account can read everything and change nothing — which is only meaningful
+            because unauthenticated reads are refused outright.
           </p>
         </div>
       </div>

@@ -1,3 +1,5 @@
+import { Reference } from '../RecordDrawer'
+import { useDrawerAccessibility } from '../RecordDrawer'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -53,12 +55,13 @@ export function SoADrawer({
   /** Called after a successful write, so the list behind the drawer can re-read. */
   onChanged?: () => void
 }) {
+  const drawerRef = useDrawerAccessibility(onClose)
   const { session } = useAuth()
   const [version, setVersion] = useState(0)
   const { data, error, loading } = useAsync(() => api.soaEntry(controlRef), [controlRef, version])
 
   return (
-    <aside className="drawer soa-drawer">
+    <aside ref={drawerRef} className="drawer soa-drawer">
       <div className="drawer-head">
         <h2>{controlRef}</h2>
         <button type="button" onClick={onClose} aria-label="Close">
@@ -66,15 +69,15 @@ export function SoADrawer({
         </button>
       </div>
 
-      {loading && <p className="empty">Loading…</p>}
+      {loading && <p className="skeleton" role="status">Loading…</p>}
       {error && <p className="error">{error}</p>}
 
       {data && (
         <>
           <p className="drawer-title">{data.control_title}</p>
           <p className="card-meta">
-            {data.theme} · owned by {data.owner} · v{data.version}, approved by{' '}
-            {data.approved_by ?? 'nobody'} on {data.approved_date ?? '—'}
+            {data.theme} · owned by {data.owner} · source v{data.version}, recorded approver{' '}
+            {data.approved_by ?? 'not recorded'} on {data.approved_date ?? '—'}. This is the working entry; release approval is tracked separately.
           </p>
 
           <div className={`scope-block ${data.applicable ? 'is-in' : 'is-out'}`}>
@@ -82,9 +85,7 @@ export function SoADrawer({
               {data.applicable ? 'Applicable' : 'Excluded'} ·{' '}
               {IMPLEMENTATION_LABEL[data.implementation_status]}
             </strong>
-            <p>
-              {data.applicable ? data.justification_inclusion : data.justification_exclusion}
-            </p>
+            <p>{data.applicable ? data.justification_inclusion : data.justification_exclusion}</p>
             {data.justification_outstanding && (
               <p className="todo-text">
                 Justification reserved for the author — not machine-generated.
@@ -143,7 +144,8 @@ export function SoADrawer({
                       </div>
                       <p>{risk.title}</p>
                       <p className="muted">
-                        Treatment: {TREATMENT_LABEL[risk.treatment_decision]} · {risk.category_label}
+                        Treatment: {TREATMENT_LABEL[risk.treatment_decision]} ·{' '}
+                        {risk.category_label}
                       </p>
                     </li>
                   ))}
@@ -166,7 +168,7 @@ export function SoADrawer({
                   {data.controls.map((control) => (
                     <li key={control.control_id}>
                       <div className="chain-row">
-                        <code className="chain-ref">{control.control_id}</code>
+                        <Reference value={control.control_id} />
                         <span className="muted">{control.control_family}</span>
                       </div>
                       <p>{control.title}</p>
@@ -192,7 +194,7 @@ export function SoADrawer({
                   {data.evidence.map((item) => (
                     <li key={item.evidence_ref} className={item.expired ? 'uncredited' : ''}>
                       <div className="chain-row">
-                        <code className="chain-ref">{item.evidence_ref}</code>
+                        <Reference value={item.evidence_ref} />
                         <span className="basis basis-design_only">{item.evidence_type}</span>
                         {item.expired && <span className="tag tag-warn">expired</span>}
                       </div>
@@ -217,7 +219,7 @@ export function SoADrawer({
                   {data.tests.map((test) => (
                     <li key={test.test_ref}>
                       <div className="chain-row">
-                        <code className="chain-ref">{test.test_ref}</code>
+                        <Reference value={test.test_ref} />
                         <span className={`concl concl-${test.conclusion.toLowerCase()}`}>
                           {CONCLUSION_LABEL[test.conclusion]}
                         </span>
@@ -226,9 +228,9 @@ export function SoADrawer({
                         )}
                       </div>
                       <p>
-                        <code>{test.control_id}</code> · {test.exceptions_count} exception
-                        {test.exceptions_count === 1 ? '' : 's'} in a sample of{' '}
-                        {test.sample_size} of {test.population_size}
+                        <Reference value={test.control_id} /> · {test.exceptions_count} exception
+                        {test.exceptions_count === 1 ? '' : 's'} in a sample of {test.sample_size}{' '}
+                        of {test.population_size}
                       </p>
                       <p className="muted">Tested {test.test_date}</p>
                     </li>
@@ -249,9 +251,7 @@ export function SoADrawer({
               {data.is_gap && (
                 <p>
                   Applicable and {IMPLEMENTATION_LABEL[data.implementation_status].toLowerCase()}.
-                  {data.implementation_description
-                    ? ` ${data.implementation_description}`
-                    : ''}
+                  {data.implementation_description ? ` ${data.implementation_description}` : ''}
                 </p>
               )}
             </ChainStep>
@@ -274,7 +274,7 @@ export function SoADrawer({
                       className={item.status === 'COMPLETED' ? 'uncredited' : ''}
                     >
                       <div className="chain-row">
-                        <code className="chain-ref">{item.remediation_ref}</code>
+                        <Reference value={item.remediation_ref} />
                         <span className="muted">{REMEDIATION_LABEL[item.status]}</span>
                         {item.overdue && <span className="tag tag-breach">overdue</span>}
                       </div>

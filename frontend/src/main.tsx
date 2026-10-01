@@ -15,3 +15,7 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>,
 )
+
+import './phase4.css'
+
+import './studio.css'

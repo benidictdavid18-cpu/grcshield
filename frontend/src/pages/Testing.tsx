@@ -1,4 +1,10 @@
-import { useMemo, useState } from 'react'
+import { Reference } from '../RecordDrawer'
+import { CascadeGraph } from '../CascadeGraph'
+import { RecordBrowser } from '../RecordBrowser'
+import { useDrawerAccessibility } from '../RecordDrawer'
+import { useViewState, useViewSelection } from '../useViewState'
+import { LiveTable } from '../LiveTable'
+import { useMemo } from 'react'
 
 import {
   AiAssistant,
@@ -49,9 +55,9 @@ function TestAssistBody({ data }: { data: AiControlTestAssist }) {
       <AiList heading="Further testing to consider" items={s.additional_testing} />
       <AiList heading="Observations" items={s.observations} />
       <p className="muted">
-        The conclusion on this workpaper, and the control's design and operating ratings,
-        stay with the tester and the reviewer. The assistant has not seen the evidence
-        artifacts; it has read how they were described.
+        The conclusion on this workpaper, and the control's design and operating ratings, stay with
+        the tester and the reviewer. The assistant has not seen the evidence artifacts; it has read
+        how they were described.
       </p>
       <AiGaps items={s.missing_information} />
       <AiConfidenceNote confidence={s.confidence} />
@@ -68,13 +74,10 @@ function FindingDraftBody({ data }: { data: AiFindingDraft }) {
       <AiText heading="Criteria, what was expected" value={s.criteria} />
       <AiText heading="Risk and impact" value={s.risk_and_impact} />
       <AiList heading="Possible root causes, as hypotheses" items={s.possible_root_causes} />
-      <AiText
-        heading="Suggested remediation language"
-        value={s.suggested_remediation_language}
-      />
+      <AiText heading="Suggested remediation language" value={s.suggested_remediation_language} />
       <p className="muted">
-        This is the first step of test, draft finding, human review, final finding. No
-        finding has been created, no severity assigned and no status changed.
+        This is the first step of test, draft finding, human review, final finding. No finding has
+        been created, no severity assigned and no status changed.
       </p>
       <AiGaps items={s.missing_information} />
     </>
@@ -93,8 +96,8 @@ function RemediationBody({ data }: { data: AiRemediationAssist }) {
           <dd>{s.corrective_action || 'Not stated'}</dd>
         </dl>
         <p className="muted">
-          Clause 10.2 asks for both. A plan with only a correction produces the same
-          finding again next year.
+          Clause 10.2 asks for both. A plan with only a correction produces the same finding again
+          next year.
         </p>
       </AiSection>
       <AiList heading="Root cause questions to ask" items={s.root_cause_questions} />
@@ -108,8 +111,8 @@ function RemediationBody({ data }: { data: AiRemediationAssist }) {
       )}
       <AiText heading="Argument for the priority" value={s.priority_rationale} />
       <p className="muted">
-        A role, not a person, and no date at all. Owners and deadlines are agreed with
-        the business; a date nobody agreed is not a plan.
+        A role, not a person, and no date at all. Owners and deadlines are agreed with the business;
+        a date nobody agreed is not a plan.
       </p>
       <AiGaps items={s.missing_information} />
     </>
@@ -117,6 +120,7 @@ function RemediationBody({ data }: { data: AiRemediationAssist }) {
 }
 
 function Workpaper({ testRef, onClose }: { testRef: string; onClose: () => void }) {
+  const drawerRef = useDrawerAccessibility(onClose)
   const { data, error, loading } = useAsync(() => api.controlTest(testRef), [testRef])
 
   const testActions: AiAction[] = [
@@ -137,17 +141,22 @@ function Workpaper({ testRef, onClose }: { testRef: string; onClose: () => void 
   ]
 
   return (
-    <aside className="drawer soa-drawer">
+    <aside ref={drawerRef} className="drawer soa-drawer">
       <div className="drawer-head">
         <h2>{testRef}</h2>
         <button type="button" onClick={onClose} aria-label="Close">
           ×
         </button>
       </div>
-      {loading && <p className="empty">Loading workpaper…</p>}
+      {loading && (
+        <p className="skeleton" role="status">
+          Loading workpaper…
+        </p>
+      )}
       {error && <p className="error">{error}</p>}
       {data && (
         <>
+          <CascadeGraph controlRef={data.control_id} />
           <p className="drawer-title">
             {data.control_id} — {data.control_title}
           </p>
@@ -156,17 +165,13 @@ function Workpaper({ testRef, onClose }: { testRef: string; onClose: () => void 
             {data.period_covered_end}
           </p>
 
-          <div
-            className={`scope-block ${data.conclusion === 'PASS' ? 'is-in' : 'is-out'}`}
-          >
+          <div className={`scope-block ${data.conclusion === 'PASS' ? 'is-in' : 'is-out'}`}>
             <strong>{CONCLUSION_LABEL[data.conclusion]}</strong>
             <p>
-              {data.exceptions_count} exception{data.exceptions_count === 1 ? '' : 's'} in a
-              sample of {data.sample_size} ({Math.round(data.exception_rate * 100)}%)
+              {data.exceptions_count} exception{data.exceptions_count === 1 ? '' : 's'} in a sample
+              of {data.sample_size} ({Math.round(data.exception_rate * 100)}%)
             </p>
-            {data.linked_finding_ref && (
-              <p className="muted">Raised {data.linked_finding_ref}.</p>
-            )}
+            {data.linked_finding_ref && <p className="muted">Raised {data.linked_finding_ref}.</p>}
           </div>
 
           <h3>Objective</h3>
@@ -209,7 +214,7 @@ function Workpaper({ testRef, onClose }: { testRef: string; onClose: () => void 
               {data.evidence.map((item) => (
                 <li key={item.evidence_ref}>
                   <div className="chain-row">
-                    <code className="chain-ref">{item.evidence_ref}</code>
+                    <Reference value={item.evidence_ref} />
                     {item.expired && <span className="tag tag-warn">expired</span>}
                   </div>
                   <p>{item.title}</p>
@@ -243,8 +248,8 @@ export function Testing() {
   const tests = useAsync(() => api.controlTests(), [])
   const controls = useAsync(() => api.internalControls(), [])
   const findings = useAsync(() => api.findings(), [])
-  const [tab, setTab] = useState<Tab>('tests')
-  const [selected, setSelected] = useState<string | null>(null)
+  const [tab, setTab] = useViewState<Tab>('tab', 'tests', ['tests', 'controls', 'findings'])
+  const [selected, setSelected] = useViewSelection('detail')
 
   const sortedTests = useMemo(
     () =>
@@ -264,9 +269,9 @@ export function Testing() {
       <div className="library-main">
         <h1>Control testing</h1>
         <p className="lede">
-          Design and operating effectiveness are assessed separately, because they answer
-          different questions and fail in different ways. Every workpaper records how the
-          sample was chosen — a sample without a rationale is an opinion.
+          Design and operating effectiveness are assessed separately, because they answer different
+          questions and fail in different ways. Every workpaper records how the sample was chosen —
+          a sample without a rationale is an opinion.
         </p>
 
         {summary && (
@@ -300,12 +305,12 @@ export function Testing() {
               <div className="banner banner-warn" role="note">
                 <strong>
                   {summary.optimistic_risk_links.length} risk-control link
-                  {summary.optimistic_risk_links.length === 1 ? '' : 's'} claim more assurance
-                  than the control library supports:
+                  {summary.optimistic_risk_links.length === 1 ? '' : 's'} claim more assurance than
+                  the control library supports:
                 </strong>{' '}
-                {summary.optimistic_risk_links.join(', ')}. This is surfaced rather than
-                blocked — an analyst may be scoping to a population the exceptions did not
-                touch, but the discrepancy should be visible.
+                {summary.optimistic_risk_links.join(', ')}. This is surfaced rather than blocked —
+                an analyst may be scoping to a population the exceptions did not touch, but the
+                discrepancy should be visible.
               </div>
             )}
           </>
@@ -332,7 +337,7 @@ export function Testing() {
         </div>
 
         {tab === 'tests' && (
-          <table className="register">
+          <LiveTable id="testing-1">
             <thead>
               <tr>
                 <th>Test</th>
@@ -354,7 +359,7 @@ export function Testing() {
                     </button>
                   </td>
                   <td>
-                    <code>{test.control_id}</code> {test.control_title}
+                    <Reference value={test.control_id} /> {test.control_title}
                     <span className="row-sub">
                       {test.tester} · {test.test_date}
                       {test.rationale_outstanding && (
@@ -376,7 +381,7 @@ export function Testing() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </LiveTable>
         )}
 
         {tab === 'controls' && (
@@ -384,7 +389,7 @@ export function Testing() {
             <p className="muted rule-note" title={EFFECTIVENESS_RULE}>
               Hover for the design/operating rule. ⓘ
             </p>
-            <table className="register">
+            <LiveTable id="testing-2">
               <thead>
                 <tr>
                   <th>Control</th>
@@ -399,7 +404,7 @@ export function Testing() {
                 {(controls.data ?? []).map((control) => (
                   <tr key={control.control_id}>
                     <td>
-                      <code>{control.control_id}</code> {control.title}
+                      <Reference value={control.control_id} /> {control.title}
                       {control.effectiveness_note && (
                         <span className="row-sub">{control.effectiveness_note}</span>
                       )}
@@ -422,63 +427,64 @@ export function Testing() {
                       </span>
                     </td>
                     <td className="num">{control.test_count}</td>
-                    <td className="muted">
-                      {BASIS_LABEL[control.strongest_supported_basis]}
-                    </td>
+                    <td className="muted">{BASIS_LABEL[control.strongest_supported_basis]}</td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </LiveTable>
           </>
         )}
 
         {tab === 'findings' && (
           <div className="findings">
-            {(findings.data ?? []).map((finding) => (
-              <article key={finding.finding_ref} className="finding-card">
-                <div className="chain-row">
-                  <code className="chain-ref">{finding.finding_ref}</code>
-                  <span className={`sev sev-${finding.severity.toLowerCase()}`}>
-                    {finding.severity.toLowerCase()}
-                  </span>
-                  <span className="muted">{finding.status.toLowerCase()}</span>
-                  {finding.source_test_ref && (
-                    <span className="muted">from {finding.source_test_ref}</span>
-                  )}
-                </div>
-                <h3>{finding.title}</h3>
-                <p>{finding.description}</p>
-                <p className="muted">
-                  Identified {finding.identified_date} by {finding.identified_by} · owner{' '}
-                  {finding.owner}
-                </p>
-                {finding.remediation.map((item) => (
-                  <p key={item.remediation_ref} className="muted">
-                    → <code>{item.remediation_ref}</code> {item.title} · {item.owner} · due{' '}
-                    {item.due_date}
-                    {item.overdue && <span className="tag tag-breach">overdue</span>}
-                  </p>
-                ))}
-                <AiAssistant
-                  title={`AI remediation assistant for ${finding.finding_ref}`}
-                  lede="Correction and corrective action are drafted as separate things,
+            {
+              <RecordBrowser id="finding-records" rows={findings.data ?? []} refKey="finding_ref">
+                {(finding) => (
+                  <article key={finding.finding_ref} className="finding-card">
+                    <div className="chain-row">
+                      <Reference value={finding.finding_ref} />
+                      <span className={`sev sev-${finding.severity.toLowerCase()}`}>
+                        {finding.severity.toLowerCase()}
+                      </span>
+                      <span className="muted">{finding.status.toLowerCase()}</span>
+                      {finding.source_test_ref && (
+                        <span className="muted">from {finding.source_test_ref}</span>
+                      )}
+                    </div>
+                    <h3>{finding.title}</h3>
+                    <p>{finding.description}</p>
+                    <p className="muted">
+                      Identified {finding.identified_date} by {finding.identified_by} · owner{' '}
+                      {finding.owner}
+                    </p>
+                    {finding.remediation.map((item) => (
+                      <p key={item.remediation_ref} className="muted">
+                        → <Reference value={item.remediation_ref} /> {item.title} · {item.owner} ·
+                        due {item.due_date}
+                        {item.overdue && <span className="tag tag-breach">overdue</span>}
+                      </p>
+                    ))}
+                    <AiAssistant
+                      title={`AI remediation assistant for ${finding.finding_ref}`}
+                      lede="Correction and corrective action are drafted as separate things,
                         because Clause 10.2 asks for both. No owner is assigned and no
                         date is proposed."
-                  actions={[
-                    {
-                      key: `remediation-${finding.finding_ref}`,
-                      label: 'Suggest correction and corrective action',
-                      hint: 'Plus the evidence that would justify closing it',
-                      run: (question) =>
-                        aiApi.remediationAssist(finding.finding_ref, question),
-                      render: (result: AiEnvelope) => (
-                        <RemediationBody data={result as AiRemediationAssist} />
-                      ),
-                    },
-                  ]}
-                />
-              </article>
-            ))}
+                      actions={[
+                        {
+                          key: `remediation-${finding.finding_ref}`,
+                          label: 'Suggest correction and corrective action',
+                          hint: 'Plus the evidence that would justify closing it',
+                          run: (question) => aiApi.remediationAssist(finding.finding_ref, question),
+                          render: (result: AiEnvelope) => (
+                            <RemediationBody data={result as AiRemediationAssist} />
+                          ),
+                        },
+                      ]}
+                    />
+                  </article>
+                )}
+              </RecordBrowser>
+            }
           </div>
         )}
       </div>

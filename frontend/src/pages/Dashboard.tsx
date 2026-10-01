@@ -1,6 +1,9 @@
+import { SecurityScene } from '../SecurityScene'
+import { Link } from 'react-router-dom'
+import { KriTrend, RiskHeatmap } from '../Charts'
 import { useState } from 'react'
 
-import { api, type Kri, type TrendPoint } from '../api'
+import { api, type Kri } from '../api'
 import { useAsync } from '../useAsync'
 
 const UNIT_SUFFIX: Record<string, string> = { PERCENT: '%', DAYS: 'd', COUNT: '' }
@@ -10,29 +13,6 @@ const MOVEMENT_LABEL: Record<string, string> = {
   DETERIORATING: 'getting worse',
   FLAT: 'unchanged',
   NO_TREND: 'no trend yet',
-}
-
-/** Six-month sparkline. Bars, not a line: the series is monthly observations rather
- *  than a continuous signal, and a line implies values between the points. */
-function Sparkline({ points, direction }: { points: TrendPoint[]; direction: string }) {
-  const values = points.map((p) => p.value).filter((v): v is number => v !== null)
-  const max = Math.max(...values, 1)
-
-  return (
-    <div className="spark" role="img" aria-label={`Six-period trend, ${direction}`}>
-      {points.map((point) => {
-        const height = point.value === null ? 0 : Math.max(4, (point.value / max) * 100)
-        return (
-          <div key={point.period_end} className="spark-col" title={`${point.period_end}: ${point.value ?? 'not measured'}`}>
-            <div
-              className={`spark-bar spark-${point.band.toLowerCase()} ${point.is_current ? 'is-current' : ''}`}
-              style={{ height: `${height}%` }}
-            />
-          </div>
-        )
-      })}
-    </div>
-  )
 }
 
 function KriCard({ kri }: { kri: Kri }) {
@@ -57,7 +37,7 @@ function KriCard({ kri }: { kri: Kri }) {
         <span className="kri-target">target {target}</span>
       </p>
 
-      <Sparkline points={kri.trend} direction={kri.movement} />
+      <KriTrend kri={kri} />
       <p className="muted kri-movement">
         6 periods · {MOVEMENT_LABEL[kri.movement]} · owned by {kri.owner_role}
       </p>
@@ -83,8 +63,9 @@ function KriCard({ kri }: { kri: Kri }) {
 
 export function Dashboard() {
   const { data, error, loading } = useAsync(() => api.kris(), [])
+  const risks = useAsync(() => api.risks(), [])
 
-  if (loading) return <p className="empty">Loading indicators…</p>
+  if (loading) return <p className="skeleton" role="status">Loading indicators…</p>
   if (error) return <p className="error">Could not load indicators: {error}</p>
   if (!data) return null
 
@@ -93,13 +74,40 @@ export function Dashboard() {
 
   return (
     <section>
-      <h1>Key risk indicators</h1>
-      <p className="lede">
-        Seven indicators, each with a formula precise enough that two people would compute
-        the same number. Historical points are recorded observations; the current figure is
-        computed from the registers on every page load, so the dashboard cannot drift away
-        from the data behind it.
-      </p>
+      <div className="command-hero">
+        <div className="command-intro">
+          <span className="eyebrow">Governance, in perspective</span>
+          <h1>
+            A clearer view.
+            <br />
+            <span>A stronger position.</span>
+          </h1>
+          <p>Understand the exposure. Follow the evidence. Keep every decision accountable.</p>
+          <div className="hero-actions">
+            <Link className="primary-link" to="/risks">
+              Explore risk register <span aria-hidden="true">↗</span>
+            </Link>
+            <Link to="/soa">Review controls →</Link>
+          </div>
+          <div className="hero-footnote">
+            <span className="status-dot" />
+            {risks.data?.length ?? '—'} recorded risks <span>·</span> {data.length} live indicators{' '}
+            <span>·</span> Portfolio assessment
+          </div>
+        </div>
+        {risks.data ? (
+          <SecurityScene risks={risks.data} />
+        ) : (
+          <div className="skeleton">Loading risk model…</div>
+        )}
+      </div>
+      <div className="section-heading">
+        <div>
+          <span className="eyebrow">Current position</span>
+          <h2>Signals worth your attention</h2>
+        </div>
+        <span className="muted">Computed from your registers</span>
+      </div>
 
       <div className="tiles">
         <div className="tile">
@@ -115,13 +123,13 @@ export function Dashboard() {
           <span className="tile-label">getting worse</span>
         </div>
         <div className="tile">
-          <span className="tile-value">
-            {data.filter((k) => k.current_value === null).length}
-          </span>
+          <span className="tile-value">{data.filter((k) => k.current_value === null).length}</span>
           <span className="tile-label">not measurable yet</span>
         </div>
       </div>
 
+      {risks.data && <RiskHeatmap risks={risks.data} />}
+      {risks.error && <p className="error">Risk heatmap unavailable: {risks.error}</p>}
       <div className="kri-grid">
         {data.map((kri) => (
           <KriCard key={kri.kri_ref} kri={kri} />

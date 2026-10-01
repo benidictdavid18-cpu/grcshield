@@ -1,10 +1,11 @@
+import { LiveTable } from '../LiveTable'
 import { api } from '../api'
 import { useAsync } from '../useAsync'
 
 export function Appetite() {
   const { data, error, loading } = useAsync(() => api.appetite(), [])
 
-  if (loading) return <p className="empty">Loading appetite…</p>
+  if (loading) return <p className="skeleton" role="status">Loading appetite…</p>
   if (error) return <p className="error">Could not load appetite: {error}</p>
   if (!data) return null
 
@@ -12,13 +13,13 @@ export function Appetite() {
     <section>
       <h1>Risk appetite</h1>
       <p className="lede">
-        Appetite is set per category, not once for the whole organisation. A single global
-        number would say the business tolerates the same exposure to a privacy breach as to a
-        laptop running an old OS. Each ceiling is approved by the person who answers for the
-        consequence — none of them is the security function.
+        Appetite is set per category, not once for the whole organisation. A single global number
+        would say the business tolerates the same exposure to a privacy breach as to a laptop
+        running an old OS. Each ceiling is approved by the person who answers for the consequence —
+        none of them is the security function.
       </p>
 
-      <table className="register">
+      <LiveTable id="appetite-1">
         <thead>
           <tr>
             <th>Category</th>
@@ -43,7 +44,7 @@ export function Appetite() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </LiveTable>
     </section>
   )
 }

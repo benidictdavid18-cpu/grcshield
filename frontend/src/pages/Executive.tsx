@@ -1,3 +1,4 @@
+import { LiveTable } from '../LiveTable'
 import { api, openReport } from '../api'
 import { useAsync } from '../useAsync'
 
@@ -6,7 +7,7 @@ const SEVERITY_ORDER = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
 export function Executive() {
   const { data, error, loading } = useAsync(() => api.executiveSummary(), [])
 
-  if (loading) return <p className="empty">Loading…</p>
+  if (loading) return <p className="skeleton" role="status">Loading…</p>
   if (error) return <p className="error">Could not load the summary: {error}</p>
   if (!data) return null
 
@@ -67,7 +68,7 @@ export function Executive() {
       </ol>
 
       <h2>The five exposures that matter most</h2>
-      <table className="register">
+      <LiveTable id="executive-1">
         <thead>
           <tr>
             <th>What could go wrong</th>
@@ -89,10 +90,10 @@ export function Executive() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </LiveTable>
 
       <h2>Where the biggest protection gaps are</h2>
-      <table className="register">
+      <LiveTable id="executive-2">
         <thead>
           <tr>
             <th>Protection not yet fully in place</th>
@@ -112,7 +113,7 @@ export function Executive() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </LiveTable>
 
       <div className="exec-columns">
         <div>
@@ -122,8 +123,8 @@ export function Executive() {
             {SEVERITY_ORDER.filter((s) => data.open_findings_by_severity[s] > 0)
               .map((s) => `${data.open_findings_by_severity[s]} ${s.toLowerCase()}`)
               .join(', ')}
-            . Each has an owner and a date. Finding them ourselves is the system working;
-            leaving them open past their date is not.
+            . Each has an owner and a date. Finding them ourselves is the system working; leaving
+            them open past their date is not.
           </p>
         </div>
         <div>

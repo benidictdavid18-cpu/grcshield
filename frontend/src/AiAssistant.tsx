@@ -167,8 +167,8 @@ export function AiAssistant({
           {allowQuestion && (
             <label className="ai-question">
               <span className="muted">
-                Optional — a question about this record, for the assistant to answer
-                within the task above.
+                Optional — a question about this record, for the assistant to answer within the task
+                above.
               </span>
               <input
                 type="text"
@@ -182,8 +182,8 @@ export function AiAssistant({
 
           {busy && (
             <p className="empty">
-              Asking the local model… a first request after a cold start can take a
-              while, and nothing else in the application is waiting on it.
+              Asking the local model… a first request after a cold start can take a while, and
+              nothing else in the application is waiting on it.
             </p>
           )}
 
@@ -245,9 +245,8 @@ function AiResult({ data, children }: { data: AiEnvelope; children: ReactNode })
           ))}
         </ul>
         <p className="muted">
-          Only these records were sent. The prompt is assembled on the server from named
-          fields; the model has no access to the database, and none of its output has
-          changed anything here.
+          Only these records were sent. The prompt is assembled on the server from named fields; the
+          model has no access to the database, and none of its output has changed anything here.
         </p>
       </details>
 
@@ -309,8 +308,8 @@ export function AiGaps({ items }: { items: string[] }) {
         </ul>
       ) : (
         <p className="muted">
-          The assistant reported no missing information. That is a claim about its own
-          answer, not a fact about the record.
+          The assistant reported no missing information. That is a claim about its own answer, not a
+          fact about the record.
         </p>
       )}
     </AiSection>
@@ -320,9 +319,8 @@ export function AiGaps({ items }: { items: string[] }) {
 export function AiConfidenceNote({ confidence }: { confidence: string }) {
   return (
     <p className="ai-confidence muted">
-      Model-reported confidence: <strong>{confidence}</strong>. This is the model's
-      account of its own output, not a measurement, and it carries no weight anywhere in
-      the risk methodology.
+      Model-reported confidence: <strong>{confidence}</strong>. This is the model's account of its
+      own output, not a measurement, and it carries no weight anywhere in the risk methodology.
     </p>
   )
 }

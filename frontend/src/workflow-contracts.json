@@ -1,0 +1,4303 @@
+[
+  {
+    "group": "proof",
+    "method": "POST",
+    "path": "/control-tests",
+    "parameters": [],
+    "body": {
+      "properties": {
+        "control_id": {
+          "type": "string",
+          "title": "Control Id"
+        },
+        "tester": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Tester"
+        },
+        "test_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Test Date"
+        },
+        "period_covered_start": {
+          "type": "string",
+          "format": "date",
+          "title": "Period Covered Start"
+        },
+        "period_covered_end": {
+          "type": "string",
+          "format": "date",
+          "title": "Period Covered End"
+        },
+        "test_objective": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Test Objective"
+        },
+        "test_procedure": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Test Procedure"
+        },
+        "population_description": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Population Description"
+        },
+        "population_size": {
+          "type": "integer",
+          "title": "Population Size"
+        },
+        "sample_size": {
+          "type": "integer",
+          "title": "Sample Size"
+        },
+        "sample_selection_method": {
+          "type": "string",
+          "enum": [
+            "RANDOM",
+            "HAPHAZARD",
+            "JUDGMENTAL",
+            "FULL_POPULATION"
+          ],
+          "title": "SampleSelectionMethod"
+        },
+        "sampling_rationale": {
+          "type": "string",
+          "title": "Sampling Rationale",
+          "default": ""
+        },
+        "results_summary": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Results Summary"
+        },
+        "exceptions_count": {
+          "type": "integer",
+          "title": "Exceptions Count",
+          "default": 0
+        },
+        "exception_details": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Exception Details"
+        },
+        "conclusion": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "PASS_WITH_EXCEPTIONS",
+            "FAIL"
+          ],
+          "title": "TestConclusion"
+        },
+        "reviewed_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reviewed By"
+        },
+        "review_date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Review Date"
+        },
+        "evidence_refs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "title": "Evidence Refs",
+          "default": []
+        },
+        "remediation_owner": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Remediation Owner"
+        },
+        "remediation_due_date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Remediation Due Date"
+        }
+      },
+      "type": "object",
+      "required": [
+        "control_id",
+        "tester",
+        "test_date",
+        "period_covered_start",
+        "period_covered_end",
+        "test_objective",
+        "test_procedure",
+        "population_description",
+        "population_size",
+        "sample_size",
+        "sample_selection_method",
+        "results_summary",
+        "conclusion"
+      ],
+      "title": "ControlTestCreateIn",
+      "description": "A new workpaper.\n\nA FAIL or PASS_WITH_EXCEPTIONS conclusion auto-creates a draft finding and a\nremediation item; there is no field to opt out of that."
+    }
+  },
+  {
+    "group": "acceptances",
+    "method": "POST",
+    "path": "/risk-exceptions",
+    "parameters": [],
+    "body": {
+      "properties": {
+        "risk_ref": {
+          "type": "string",
+          "title": "Risk Ref"
+        },
+        "requested_by": {
+          "type": "string",
+          "title": "Requested By"
+        },
+        "business_justification": {
+          "type": "string",
+          "title": "Business Justification"
+        },
+        "compensating_controls": {
+          "type": "string",
+          "title": "Compensating Controls"
+        },
+        "approver_role": {
+          "type": "string",
+          "title": "Approver Role"
+        },
+        "approval_date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Approval Date"
+        },
+        "expiry_date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expiry Date"
+        },
+        "review_trigger": {
+          "type": "string",
+          "title": "Review Trigger",
+          "default": ""
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "APPROVED",
+            "EXPIRED",
+            "WITHDRAWN",
+            "REJECTED"
+          ],
+          "title": "ExceptionStatus"
+        }
+      },
+      "type": "object",
+      "required": [
+        "risk_ref",
+        "requested_by",
+        "business_justification",
+        "compensating_controls",
+        "approver_role"
+      ],
+      "title": "ExceptionCreateIn"
+    }
+  },
+  {
+    "group": "proof",
+    "method": "PUT",
+    "path": "/risks/{risk_ref}/controls/{control_ref}/proof",
+    "parameters": [
+      {
+        "name": "risk_ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Risk Ref"
+        }
+      },
+      {
+        "name": "control_ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Control Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "test_ref": {
+          "type": "string",
+          "title": "Test Ref"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "test_ref",
+        "note"
+      ],
+      "title": "ProofIn"
+    }
+  },
+  {
+    "group": "proof",
+    "method": "POST",
+    "path": "/control-tests/{test_ref}/disposition",
+    "parameters": [
+      {
+        "name": "test_ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Test Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "replacement_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Replacement Ref"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Reason"
+        }
+      },
+      "type": "object",
+      "required": [
+        "reason"
+      ],
+      "title": "DispositionIn"
+    }
+  },
+  {
+    "group": "reassessments",
+    "method": "POST",
+    "path": "/reassessments/{item_id}/resolve",
+    "parameters": [
+      {
+        "name": "item_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Item Id"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "resolution": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Resolution"
+        }
+      },
+      "type": "object",
+      "required": [
+        "evidence_ref",
+        "resolution"
+      ],
+      "title": "ResolutionIn"
+    }
+  },
+  {
+    "group": "acceptances",
+    "method": "POST",
+    "path": "/acceptance-authorities",
+    "parameters": [],
+    "body": {
+      "properties": {
+        "username": {
+          "type": "string",
+          "title": "Username"
+        },
+        "business_role": {
+          "type": "string",
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Business Role"
+        },
+        "expires_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Expires On"
+        },
+        "grant_reason": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Grant Reason"
+        }
+      },
+      "type": "object",
+      "required": [
+        "username",
+        "business_role",
+        "expires_on",
+        "grant_reason"
+      ],
+      "title": "AuthorityIn"
+    }
+  },
+  {
+    "group": "acceptances",
+    "method": "POST",
+    "path": "/risk-exceptions/{exception_ref}/decisions",
+    "parameters": [
+      {
+        "name": "exception_ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Exception Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": [
+            "APPROVED",
+            "REJECTED",
+            "WITHDRAWN"
+          ],
+          "title": "Decision"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        },
+        "expiry_date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expiry Date"
+        }
+      },
+      "type": "object",
+      "required": [
+        "decision",
+        "note"
+      ],
+      "title": "DecisionIn"
+    }
+  },
+  {
+    "group": "context",
+    "method": "PUT",
+    "path": "/isms/context/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "ISSUE",
+            "PARTY_REQUIREMENT",
+            "PROCESS"
+          ],
+          "title": "Kind"
+        },
+        "topic": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Topic",
+          "default": "GENERAL"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Title"
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Statement"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Source"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "review_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Review Date"
+        },
+        "relevance": {
+          "type": "string",
+          "enum": [
+            "UNASSESSED",
+            "RELEVANT",
+            "NOT_RELEVANT"
+          ],
+          "title": "Relevance",
+          "default": "UNASSESSED"
+        },
+        "decision_note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Decision Note"
+        },
+        "risk_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Risk Ref"
+        },
+        "expected_revision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Revision"
+        }
+      },
+      "type": "object",
+      "required": [
+        "kind",
+        "title",
+        "statement",
+        "source",
+        "owner",
+        "review_date",
+        "decision_note"
+      ],
+      "title": "ContextIn"
+    }
+  },
+  {
+    "group": "context",
+    "method": "POST",
+    "path": "/isms/context/{ref}/review",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "group": "context",
+    "method": "POST",
+    "path": "/isms/scope-revisions",
+    "parameters": [],
+    "body": {
+      "properties": {
+        "version": {
+          "type": "string",
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Version"
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Statement"
+        },
+        "interfaces": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Interfaces"
+        },
+        "exclusions": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Exclusions"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "review_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Review Date"
+        },
+        "context_refs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "minItems": 1,
+          "title": "Context Refs"
+        }
+      },
+      "type": "object",
+      "required": [
+        "version",
+        "statement",
+        "interfaces",
+        "exclusions",
+        "owner",
+        "review_date",
+        "context_refs"
+      ],
+      "title": "ScopeIn"
+    }
+  },
+  {
+    "group": "context",
+    "method": "POST",
+    "path": "/isms/scope-revisions/{scope_id}/approve",
+    "parameters": [
+      {
+        "name": "scope_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Scope Id"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "note"
+      ],
+      "title": "ApprovalIn"
+    }
+  },
+  {
+    "group": "documents",
+    "method": "PUT",
+    "path": "/documents/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Title"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "classification": {
+          "type": "string",
+          "enum": [
+            "PUBLIC",
+            "INTERNAL",
+            "CONFIDENTIAL",
+            "RESTRICTED"
+          ],
+          "title": "Classification",
+          "default": "INTERNAL"
+        },
+        "source_kind": {
+          "type": "string",
+          "enum": [
+            "INTERNAL",
+            "EXTERNAL"
+          ],
+          "title": "Source Kind",
+          "default": "INTERNAL"
+        },
+        "external_source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "External Source"
+        },
+        "distribution": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Distribution"
+        },
+        "review_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Review Date"
+        }
+      },
+      "type": "object",
+      "required": [
+        "title",
+        "owner",
+        "distribution",
+        "review_date"
+      ],
+      "title": "DocumentIn"
+    }
+  },
+  {
+    "group": "documents",
+    "method": "POST",
+    "path": "/documents/{ref}/revisions",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "version": {
+          "type": "string",
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Version"
+        },
+        "content": {
+          "type": "string",
+          "maxLength": 1000000,
+          "minLength": 1,
+          "title": "Content"
+        },
+        "change_note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Change Note"
+        },
+        "evidence_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Evidence Ref"
+        }
+      },
+      "type": "object",
+      "required": [
+        "version",
+        "content",
+        "change_note"
+      ],
+      "title": "RevisionIn"
+    }
+  },
+  {
+    "group": "documents",
+    "method": "POST",
+    "path": "/document-revisions/{revision_id}/acknowledgements",
+    "parameters": [
+      {
+        "name": "revision_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Revision Id"
+        }
+      }
+    ],
+    "body": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "group": "documents",
+    "method": "POST",
+    "path": "/document-revisions/{revision_id}/{action}",
+    "parameters": [
+      {
+        "name": "revision_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Revision Id"
+        }
+      },
+      {
+        "name": "action",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "approve",
+            "publish",
+            "withdraw"
+          ]
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "note"
+      ],
+      "title": "ApprovalIn"
+    }
+  },
+  {
+    "group": "attachments",
+    "method": "POST",
+    "path": "/evidence/{evidence_ref}/attachments",
+    "parameters": [
+      {
+        "name": "evidence_ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Evidence Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "version": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "filename": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Filename",
+          "type": "string"
+        },
+        "content_type": {
+          "enum": [
+            "application/pdf",
+            "image/png",
+            "image/jpeg",
+            "text/plain",
+            "text/csv",
+            "application/json"
+          ],
+          "title": "Content Type",
+          "type": "string"
+        },
+        "content_base64": {
+          "maxLength": 11184812,
+          "minLength": 1,
+          "title": "Content Base64",
+          "type": "string"
+        },
+        "source": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "access_scope": {
+          "default": "REGISTER_READERS",
+          "enum": [
+            "REGISTER_READERS",
+            "MAINTAINERS"
+          ],
+          "title": "Access Scope",
+          "type": "string"
+        },
+        "retention_until": {
+          "format": "date",
+          "title": "Retention Until",
+          "type": "string"
+        },
+        "retention_reason": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Retention Reason",
+          "type": "string"
+        },
+        "legal_hold": {
+          "default": false,
+          "title": "Legal Hold",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "version",
+        "filename",
+        "content_type",
+        "content_base64",
+        "source",
+        "retention_until",
+        "retention_reason"
+      ],
+      "title": "AttachmentIn",
+      "type": "object"
+    }
+  },
+  {
+    "group": "attachments",
+    "method": "PATCH",
+    "path": "/evidence-attachments/{attachment_id}/retention",
+    "parameters": [
+      {
+        "name": "attachment_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Attachment Id"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "retention_until": {
+          "type": "string",
+          "format": "date",
+          "title": "Retention Until"
+        },
+        "legal_hold": {
+          "type": "boolean",
+          "title": "Legal Hold"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Reason"
+        }
+      },
+      "type": "object",
+      "required": [
+        "retention_until",
+        "legal_hold",
+        "reason"
+      ],
+      "title": "RetentionIn"
+    }
+  },
+  {
+    "group": "attachments",
+    "method": "POST",
+    "path": "/evidence-attachments/{attachment_id}/purge",
+    "parameters": [
+      {
+        "name": "attachment_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Attachment Id"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "note"
+      ],
+      "title": "ApprovalIn"
+    }
+  },
+  {
+    "group": "soa-releases",
+    "method": "POST",
+    "path": "/soa-releases",
+    "parameters": [],
+    "body": {
+      "properties": {
+        "version": {
+          "type": "string",
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Version"
+        },
+        "change_note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Change Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "version",
+        "change_note"
+      ],
+      "title": "ReleaseIn"
+    }
+  },
+  {
+    "group": "soa-releases",
+    "method": "POST",
+    "path": "/soa-releases/{release_id}/approve",
+    "parameters": [
+      {
+        "name": "release_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Release Id"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        },
+        "acknowledge_evidence_limitations": {
+          "type": "boolean",
+          "title": "Acknowledge Evidence Limitations",
+          "default": false
+        }
+      },
+      "type": "object",
+      "required": [
+        "note"
+      ],
+      "title": "ReleaseApprovalIn"
+    }
+  },
+  {
+    "group": "treatment",
+    "method": "PUT",
+    "path": "/treatment-plans/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "risk_ref": {
+          "type": "string",
+          "title": "Risk Ref"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Title"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "resources": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Resources"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Rationale"
+        },
+        "control_refs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "minItems": 1,
+          "title": "Control Refs"
+        },
+        "expected_revision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Revision"
+        }
+      },
+      "type": "object",
+      "required": [
+        "risk_ref",
+        "title",
+        "owner",
+        "resources",
+        "rationale",
+        "control_refs"
+      ],
+      "title": "PlanIn"
+    }
+  },
+  {
+    "group": "treatment",
+    "method": "PUT",
+    "path": "/treatment-plans/{ref}/milestones/{milestone_ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      },
+      {
+        "name": "milestone_ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Milestone Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Title"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "due_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Due Date"
+        },
+        "dependency_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Dependency Ref"
+        },
+        "remediation_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Remediation Ref"
+        }
+      },
+      "type": "object",
+      "required": [
+        "title",
+        "owner",
+        "due_date"
+      ],
+      "title": "MilestoneIn"
+    }
+  },
+  {
+    "group": "treatment",
+    "method": "POST",
+    "path": "/treatment-plans/{ref}/approve",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "note"
+      ],
+      "title": "ApprovalIn"
+    }
+  },
+  {
+    "group": "treatment",
+    "method": "POST",
+    "path": "/treatment-milestones/{milestone_id}/complete",
+    "parameters": [
+      {
+        "name": "milestone_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Milestone Id"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "evidence_ref",
+        "note"
+      ],
+      "title": "CompletionIn"
+    }
+  },
+  {
+    "group": "treatment",
+    "method": "POST",
+    "path": "/treatment-plans/{ref}/close",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "evidence_ref",
+        "note"
+      ],
+      "title": "CompletionIn"
+    }
+  },
+  {
+    "group": "treatment",
+    "method": "POST",
+    "path": "/treatment-plans/{ref}/cancel",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "note"
+      ],
+      "title": "ApprovalIn"
+    }
+  },
+  {
+    "group": "plans",
+    "method": "PUT",
+    "path": "/isms/plans/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "OBJECTIVE",
+            "CHANGE"
+          ],
+          "title": "Kind"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Title"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "resources": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Resources"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Rationale"
+        },
+        "context_ref": {
+          "type": "string",
+          "title": "Context Ref"
+        },
+        "risk_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Risk Ref"
+        },
+        "kri_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Kri Ref"
+        },
+        "due_date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Due Date"
+        },
+        "measure_definition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Measure Definition"
+        },
+        "target_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target Value"
+        },
+        "direction": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "HIGHER_IS_BETTER",
+                "LOWER_IS_BETTER"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Direction"
+        },
+        "impact_assessment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Impact Assessment"
+        },
+        "rollback_plan": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rollback Plan"
+        },
+        "expected_revision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1.0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Revision"
+        }
+      },
+      "type": "object",
+      "required": [
+        "kind",
+        "title",
+        "owner",
+        "resources",
+        "rationale",
+        "context_ref"
+      ],
+      "title": "ISMSPlanIn"
+    }
+  },
+  {
+    "group": "plans",
+    "method": "POST",
+    "path": "/isms/plans/{ref}/approve",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "note"
+      ],
+      "title": "ApprovalIn"
+    }
+  },
+  {
+    "group": "plans",
+    "method": "POST",
+    "path": "/isms/plans/{ref}/implement",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "implemented_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Implemented On"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "implemented_on",
+        "evidence_ref",
+        "note"
+      ],
+      "title": "ImplementationIn"
+    }
+  },
+  {
+    "group": "plans",
+    "method": "POST",
+    "path": "/isms/plans/{ref}/evaluations",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "observed_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Observed On"
+        },
+        "observed_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Observed Value"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "evaluation_note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Evaluation Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "observed_on",
+        "evidence_ref",
+        "evaluation_note"
+      ],
+      "title": "EvaluationIn"
+    }
+  },
+  {
+    "group": "plans",
+    "method": "POST",
+    "path": "/isms/plans/{ref}/cancel",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "note"
+      ],
+      "title": "ApprovalIn"
+    }
+  },
+  {
+    "group": "assurance",
+    "method": "PUT",
+    "path": "/isms/assurance/programmes/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "risk_basis": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Risk Basis"
+        },
+        "coverage": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Coverage"
+        },
+        "frequency": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Frequency"
+        },
+        "methods": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Methods"
+        },
+        "reporting": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Reporting"
+        },
+        "starts_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Starts On"
+        },
+        "ends_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Ends On"
+        },
+        "review_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Review Date"
+        },
+        "expected_revision": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Revision"
+        }
+      },
+      "type": "object",
+      "required": [
+        "owner",
+        "risk_basis",
+        "coverage",
+        "frequency",
+        "methods",
+        "reporting",
+        "starts_on",
+        "ends_on",
+        "review_date"
+      ],
+      "title": "ProgrammeIn"
+    }
+  },
+  {
+    "group": "assurance",
+    "method": "PUT",
+    "path": "/isms/assurance/audits/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "programme_ref": {
+          "type": "string",
+          "title": "Programme Ref"
+        },
+        "title": {
+          "type": "string",
+          "title": "Title"
+        },
+        "scope": {
+          "type": "string",
+          "title": "Scope"
+        },
+        "objectives": {
+          "type": "string",
+          "title": "Objectives"
+        },
+        "criteria": {
+          "type": "string",
+          "title": "Criteria"
+        },
+        "auditor": {
+          "type": "string",
+          "title": "Auditor"
+        },
+        "independence_note": {
+          "type": "string",
+          "title": "Independence Note"
+        },
+        "planned_start": {
+          "type": "string",
+          "format": "date",
+          "title": "Planned Start"
+        },
+        "planned_end": {
+          "type": "string",
+          "format": "date",
+          "title": "Planned End"
+        },
+        "actual_start": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Actual Start"
+        },
+        "actual_end": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Actual End"
+        },
+        "outcome_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Outcome Summary"
+        },
+        "expected_revision": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Revision"
+        }
+      },
+      "type": "object",
+      "required": [
+        "programme_ref",
+        "title",
+        "scope",
+        "objectives",
+        "criteria",
+        "auditor",
+        "independence_note",
+        "planned_start",
+        "planned_end"
+      ],
+      "title": "AuditIn"
+    }
+  },
+  {
+    "group": "assurance",
+    "method": "PUT",
+    "path": "/isms/assurance/reviews/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "review_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Review Date"
+        },
+        "chair": {
+          "type": "string",
+          "title": "Chair"
+        },
+        "attendees": {
+          "type": "string",
+          "title": "Attendees"
+        },
+        "inputs_considered": {
+          "type": "string",
+          "title": "Inputs Considered"
+        },
+        "decisions": {
+          "type": "string",
+          "title": "Decisions"
+        },
+        "actions": {
+          "type": "string",
+          "title": "Actions"
+        },
+        "next_review_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Next Review Date"
+        },
+        "expected_revision": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Revision"
+        }
+      },
+      "type": "object",
+      "required": [
+        "review_date",
+        "chair",
+        "attendees",
+        "inputs_considered",
+        "decisions",
+        "actions",
+        "next_review_date"
+      ],
+      "title": "ReviewIn"
+    }
+  },
+  {
+    "group": "assurance",
+    "method": "PUT",
+    "path": "/isms/assurance/cycles/{ref}/inputs/{category}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      },
+      {
+        "name": "category",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "PREVIOUS_ACTIONS",
+            "CONTEXT_CHANGES",
+            "PARTY_REQUIREMENTS",
+            "NONCONFORMITIES_CORRECTIVE_ACTIONS",
+            "MONITORING_RESULTS",
+            "AUDIT_RESULTS",
+            "OBJECTIVES",
+            "PARTY_FEEDBACK",
+            "RISK_ASSESSMENT_TREATMENT",
+            "IMPROVEMENT_OPPORTUNITIES"
+          ]
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "consideration": {
+          "type": "string",
+          "title": "Consideration"
+        },
+        "evidence_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Evidence Ref"
+        },
+        "no_evidence_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "No Evidence Reason"
+        }
+      },
+      "type": "object",
+      "required": [
+        "consideration"
+      ],
+      "title": "InputIn"
+    }
+  },
+  {
+    "group": "assurance",
+    "method": "POST",
+    "path": "/isms/assurance/cycles/{ref}/actions",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "action_ref": {
+          "type": "string",
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Action Ref"
+        },
+        "description": {
+          "type": "string",
+          "title": "Description"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "title": "Owner"
+        },
+        "due_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Due Date"
+        },
+        "finding_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Finding Ref"
+        }
+      },
+      "type": "object",
+      "required": [
+        "action_ref",
+        "description",
+        "owner",
+        "due_date"
+      ],
+      "title": "ActionIn"
+    }
+  },
+  {
+    "group": "assurance",
+    "method": "POST",
+    "path": "/isms/assurance/cycles/{ref}/complete",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "completed_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Completed On"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "note": {
+          "type": "string",
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "completed_on",
+        "evidence_ref",
+        "note"
+      ],
+      "title": "CompletionIn"
+    }
+  },
+  {
+    "group": "assurance",
+    "method": "POST",
+    "path": "/isms/assurance/actions/{ref}/complete",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "completed_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Completed On"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "note": {
+          "type": "string",
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "completed_on",
+        "evidence_ref",
+        "note"
+      ],
+      "title": "CompletionIn"
+    }
+  },
+  {
+    "group": "assurance",
+    "method": "PUT",
+    "path": "/isms/assurance/nonconformities/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "description": {
+          "type": "string",
+          "title": "Description"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "CONTROL_TEST",
+            "INTERNAL_AUDIT",
+            "MANAGEMENT_REVIEW",
+            "INCIDENT"
+          ],
+          "title": "FindingSource"
+        },
+        "identified_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Identified Date"
+        },
+        "identified_by": {
+          "type": "string",
+          "maxLength": 120,
+          "title": "Identified By"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 120,
+          "title": "Owner"
+        },
+        "immediate_correction": {
+          "type": "string",
+          "title": "Immediate Correction"
+        },
+        "root_cause_analysis": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Root Cause Analysis"
+        },
+        "corrective_action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Corrective Action"
+        },
+        "target_date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target Date"
+        },
+        "finding_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Finding Ref"
+        }
+      },
+      "type": "object",
+      "required": [
+        "description",
+        "source",
+        "identified_date",
+        "identified_by",
+        "owner",
+        "immediate_correction"
+      ],
+      "title": "NonconformityIn"
+    }
+  },
+  {
+    "group": "assurance",
+    "method": "POST",
+    "path": "/isms/assurance/nonconformities/{ref}/verifications",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "checked_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Checked On"
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "EFFECTIVE",
+            "INEFFECTIVE"
+          ],
+          "title": "Result"
+        },
+        "note": {
+          "type": "string",
+          "title": "Note"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        }
+      },
+      "type": "object",
+      "required": [
+        "checked_on",
+        "result",
+        "note",
+        "evidence_ref"
+      ],
+      "title": "VerificationIn"
+    }
+  },
+  {
+    "group": "incidents",
+    "method": "POST",
+    "path": "/incidents/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Title"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Description"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Source"
+        },
+        "occurred_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Occurred On"
+        },
+        "reported_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Reported On"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "risk_ref": {
+          "type": "string",
+          "title": "Risk Ref"
+        },
+        "control_ref": {
+          "type": "string",
+          "title": "Control Ref"
+        },
+        "finding_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Finding Ref"
+        }
+      },
+      "type": "object",
+      "required": [
+        "title",
+        "description",
+        "source",
+        "occurred_on",
+        "reported_on",
+        "owner",
+        "risk_ref",
+        "control_ref"
+      ],
+      "title": "EventIn"
+    }
+  },
+  {
+    "group": "incidents",
+    "method": "POST",
+    "path": "/incidents/{ref}/timeline",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "TRIAGE",
+            "RESPONSE",
+            "COMMUNICATION",
+            "EVIDENCE",
+            "CONTAINED",
+            "RECOVERED",
+            "CLOSED",
+            "REOPENED"
+          ],
+          "title": "Kind"
+        },
+        "occurred_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Occurred On"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Note"
+        },
+        "expected_revision": {
+          "type": "integer",
+          "minimum": 1.0,
+          "title": "Expected Revision"
+        },
+        "disposition": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "DISMISSED",
+                "INCIDENT"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Disposition"
+        },
+        "severity": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "CRITICAL"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Severity"
+        },
+        "notification_decision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Notification Decision"
+        },
+        "evidence_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Evidence Ref"
+        },
+        "attachment_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Attachment Id"
+        },
+        "custody_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Custody Note"
+        },
+        "lessons": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Lessons"
+        },
+        "owner": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 160,
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Owner"
+        }
+      },
+      "type": "object",
+      "required": [
+        "kind",
+        "occurred_on",
+        "note",
+        "expected_revision"
+      ],
+      "title": "EntryIn"
+    }
+  },
+  {
+    "group": "suppliers",
+    "method": "PUT",
+    "path": "/suppliers/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Name"
+        },
+        "service": {
+          "type": "string",
+          "minLength": 1,
+          "title": "Service"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "criticality": {
+          "type": "string",
+          "enum": [
+            "UNASSESSED",
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL"
+          ],
+          "title": "Criticality",
+          "default": "UNASSESSED"
+        },
+        "information_access": {
+          "type": "string",
+          "title": "Information Access"
+        },
+        "agreement_terms": {
+          "type": "string",
+          "title": "Agreement Terms"
+        },
+        "shared_responsibility": {
+          "type": "string",
+          "title": "Shared Responsibility"
+        },
+        "exit_plan": {
+          "type": "string",
+          "title": "Exit Plan"
+        },
+        "review_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Review Date"
+        },
+        "control_ref": {
+          "type": "string",
+          "title": "Control Ref"
+        },
+        "dependency_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Dependency Ref"
+        },
+        "agreement_attachment_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Agreement Attachment Id"
+        },
+        "expected_revision": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Revision"
+        }
+      },
+      "type": "object",
+      "required": [
+        "name",
+        "service",
+        "owner",
+        "information_access",
+        "agreement_terms",
+        "shared_responsibility",
+        "exit_plan",
+        "review_date",
+        "control_ref"
+      ],
+      "title": "SupplierIn"
+    }
+  },
+  {
+    "group": "suppliers",
+    "method": "POST",
+    "path": "/suppliers/{ref}/reviews",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "expected_revision": {
+          "type": "integer",
+          "title": "Expected Revision"
+        },
+        "reviewed_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Reviewed On"
+        },
+        "next_review": {
+          "type": "string",
+          "format": "date",
+          "title": "Next Review"
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "ACCEPTABLE",
+            "ACTION_REQUIRED",
+            "EXIT"
+          ],
+          "title": "Result"
+        },
+        "note": {
+          "type": "string",
+          "title": "Note"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Action"
+        },
+        "action_owner": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 160
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Action Owner"
+        },
+        "action_due": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Action Due"
+        }
+      },
+      "type": "object",
+      "required": [
+        "expected_revision",
+        "reviewed_on",
+        "next_review",
+        "result",
+        "note",
+        "evidence_ref"
+      ],
+      "title": "ReviewIn"
+    }
+  },
+  {
+    "group": "suppliers",
+    "method": "POST",
+    "path": "/suppliers/{ref}/reviews/{review_id}/complete",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      },
+      {
+        "name": "review_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Review Id"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "completed_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Completed On"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "note": {
+          "type": "string",
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "completed_on",
+        "evidence_ref",
+        "note"
+      ],
+      "title": "CompletionIn"
+    }
+  },
+  {
+    "group": "competence",
+    "method": "PUT",
+    "path": "/people/requirements/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "role": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Role"
+        },
+        "requirement": {
+          "type": "string",
+          "title": "Requirement"
+        },
+        "evaluation_method": {
+          "type": "string",
+          "title": "Evaluation Method"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "review_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Review Date"
+        },
+        "expected_revision": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Revision"
+        }
+      },
+      "type": "object",
+      "required": [
+        "role",
+        "requirement",
+        "evaluation_method",
+        "owner",
+        "review_date"
+      ],
+      "title": "RequirementIn"
+    }
+  },
+  {
+    "group": "competence",
+    "method": "POST",
+    "path": "/people/requirements/{ref}/evaluations",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "expected_revision": {
+          "type": "integer",
+          "title": "Expected Revision"
+        },
+        "subject_ref": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Subject Ref"
+        },
+        "evaluated_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Evaluated On"
+        },
+        "review_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Review Date"
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "DEVELOPMENT_REQUIRED",
+            "COMPETENT"
+          ],
+          "title": "Result"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "demonstrated_outcome": {
+          "type": "string",
+          "title": "Demonstrated Outcome"
+        },
+        "development_action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Development Action"
+        },
+        "action_due": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Action Due"
+        }
+      },
+      "type": "object",
+      "required": [
+        "expected_revision",
+        "subject_ref",
+        "evaluated_on",
+        "review_date",
+        "result",
+        "evidence_ref",
+        "demonstrated_outcome"
+      ],
+      "title": "EvaluationIn"
+    }
+  },
+  {
+    "group": "communications",
+    "method": "PUT",
+    "path": "/people/communications/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "topic": {
+          "type": "string",
+          "title": "Topic"
+        },
+        "audience": {
+          "type": "string",
+          "title": "Audience"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "method": {
+          "type": "string",
+          "title": "Method"
+        },
+        "planned_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Planned On"
+        },
+        "document_revision_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Document Revision Id"
+        }
+      },
+      "type": "object",
+      "required": [
+        "topic",
+        "audience",
+        "owner",
+        "method",
+        "planned_on"
+      ],
+      "title": "CommunicationIn"
+    }
+  },
+  {
+    "group": "communications",
+    "method": "POST",
+    "path": "/people/communications/{ref}/deliver",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "completed_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Completed On"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "note": {
+          "type": "string",
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "completed_on",
+        "evidence_ref",
+        "note"
+      ],
+      "title": "CompletionIn"
+    }
+  },
+  {
+    "group": "obligations",
+    "method": "PUT",
+    "path": "/obligations/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Title"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "LEGAL",
+            "REGULATORY",
+            "CONTRACTUAL"
+          ],
+          "title": "Kind"
+        },
+        "source": {
+          "type": "string",
+          "title": "Source"
+        },
+        "source_version": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Source Version"
+        },
+        "jurisdiction": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Jurisdiction"
+        },
+        "requirement": {
+          "type": "string",
+          "title": "Requirement"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "review_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Review Date"
+        },
+        "control_ref": {
+          "type": "string",
+          "title": "Control Ref"
+        },
+        "supplier_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Supplier Ref"
+        },
+        "expected_revision": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Revision"
+        }
+      },
+      "type": "object",
+      "required": [
+        "title",
+        "kind",
+        "source",
+        "source_version",
+        "jurisdiction",
+        "requirement",
+        "owner",
+        "review_date",
+        "control_ref"
+      ],
+      "title": "ObligationIn"
+    }
+  },
+  {
+    "group": "obligations",
+    "method": "POST",
+    "path": "/obligations/{ref}/decisions",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "expected_revision": {
+          "type": "integer",
+          "title": "Expected Revision"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "APPLICABILITY",
+            "EVALUATION"
+          ],
+          "title": "Kind"
+        },
+        "decided_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Decided On"
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "APPLICABLE",
+            "NOT_APPLICABLE",
+            "SATISFIED",
+            "ACTION_REQUIRED"
+          ],
+          "title": "Result"
+        },
+        "note": {
+          "type": "string",
+          "title": "Note"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "remediation_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Remediation Ref"
+        }
+      },
+      "type": "object",
+      "required": [
+        "expected_revision",
+        "kind",
+        "decided_on",
+        "result",
+        "note",
+        "evidence_ref"
+      ],
+      "title": "DecisionIn"
+    }
+  },
+  {
+    "group": "revisions",
+    "method": "POST",
+    "path": "/operations/revisions",
+    "parameters": [],
+    "body": {
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "ASSET",
+            "ROPA",
+            "DPIA",
+            "BIA"
+          ],
+          "title": "Kind"
+        },
+        "record_ref": {
+          "type": "string",
+          "maxLength": 24,
+          "minLength": 1,
+          "title": "Record Ref"
+        },
+        "expected_revision": {
+          "type": "integer",
+          "minimum": 0.0,
+          "title": "Expected Revision"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "review_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Review Date"
+        },
+        "change_note": {
+          "type": "string",
+          "title": "Change Note"
+        },
+        "content": {
+          "type": "object",
+          "title": "Content",
+          "variants": {
+            "ASSET": {
+              "additionalProperties": false,
+              "properties": {
+                "asset_refs": {
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Asset Refs",
+                  "type": "array"
+                },
+                "risk_refs": {
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Risk Refs",
+                  "type": "array"
+                },
+                "control_refs": {
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Control Refs",
+                  "type": "array"
+                },
+                "name": {
+                  "maxLength": 240,
+                  "minLength": 1,
+                  "title": "Name",
+                  "type": "string"
+                },
+                "description": {
+                  "title": "Description",
+                  "type": "string"
+                },
+                "asset_type": {
+                  "enum": [
+                    "SYSTEM",
+                    "DATA_STORE",
+                    "SAAS_SERVICE",
+                    "THIRD_PARTY_SERVICE",
+                    "DEVICE_FLEET",
+                    "PROCESS"
+                  ],
+                  "title": "AssetType",
+                  "type": "string"
+                },
+                "classification": {
+                  "enum": [
+                    "PUBLIC",
+                    "INTERNAL",
+                    "CONFIDENTIAL",
+                    "RESTRICTED"
+                  ],
+                  "title": "Classification",
+                  "type": "string"
+                },
+                "owner_role": {
+                  "maxLength": 120,
+                  "title": "Owner Role",
+                  "type": "string"
+                },
+                "hosting_location": {
+                  "maxLength": 160,
+                  "title": "Hosting Location",
+                  "type": "string"
+                },
+                "holds_personal_data": {
+                  "title": "Holds Personal Data",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "name",
+                "description",
+                "asset_type",
+                "classification",
+                "owner_role",
+                "hosting_location",
+                "holds_personal_data"
+              ],
+              "title": "AssetIn",
+              "type": "object"
+            },
+            "ROPA": {
+              "additionalProperties": false,
+              "properties": {
+                "asset_refs": {
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Asset Refs",
+                  "type": "array"
+                },
+                "risk_refs": {
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Risk Refs",
+                  "type": "array"
+                },
+                "control_refs": {
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Control Refs",
+                  "type": "array"
+                },
+                "processing_activity": {
+                  "maxLength": 240,
+                  "title": "Processing Activity",
+                  "type": "string"
+                },
+                "purpose": {
+                  "title": "Purpose",
+                  "type": "string"
+                },
+                "lawful_basis": {
+                  "description": "Article 6(1).",
+                  "enum": [
+                    "CONSENT",
+                    "CONTRACT",
+                    "LEGAL_OBLIGATION",
+                    "VITAL_INTERESTS",
+                    "PUBLIC_TASK",
+                    "LEGITIMATE_INTERESTS"
+                  ],
+                  "title": "LawfulBasis",
+                  "type": "string"
+                },
+                "legitimate_interests_assessment": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Legitimate Interests Assessment"
+                },
+                "data_subject_categories": {
+                  "title": "Data Subject Categories",
+                  "type": "string"
+                },
+                "personal_data_categories": {
+                  "title": "Personal Data Categories",
+                  "type": "string"
+                },
+                "special_category_data": {
+                  "default": false,
+                  "title": "Special Category Data",
+                  "type": "boolean"
+                },
+                "recipients": {
+                  "title": "Recipients",
+                  "type": "string"
+                },
+                "transfers_outside_eea": {
+                  "default": false,
+                  "title": "Transfers Outside Eea",
+                  "type": "boolean"
+                },
+                "transfer_detail": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Transfer Detail"
+                },
+                "transfer_safeguard": {
+                  "description": "Chapter V mechanisms.",
+                  "enum": [
+                    "NOT_APPLICABLE",
+                    "ADEQUACY_DECISION",
+                    "STANDARD_CONTRACTUAL_CLAUSES",
+                    "BINDING_CORPORATE_RULES",
+                    "DEROGATION"
+                  ],
+                  "title": "TransferSafeguard",
+                  "type": "string"
+                },
+                "retention_period": {
+                  "title": "Retention Period",
+                  "type": "string"
+                },
+                "security_measures_summary": {
+                  "title": "Security Measures Summary",
+                  "type": "string"
+                },
+                "controller_role": {
+                  "maxLength": 120,
+                  "title": "Controller Role",
+                  "type": "string"
+                },
+                "owner_role": {
+                  "maxLength": 120,
+                  "title": "Owner Role",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "processing_activity",
+                "purpose",
+                "lawful_basis",
+                "data_subject_categories",
+                "personal_data_categories",
+                "recipients",
+                "transfer_safeguard",
+                "retention_period",
+                "security_measures_summary",
+                "controller_role",
+                "owner_role"
+              ],
+              "title": "RopaIn",
+              "type": "object"
+            },
+            "DPIA": {
+              "additionalProperties": false,
+              "properties": {
+                "asset_refs": {
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Asset Refs",
+                  "type": "array"
+                },
+                "risk_refs": {
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Risk Refs",
+                  "type": "array"
+                },
+                "control_refs": {
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Control Refs",
+                  "type": "array"
+                },
+                "title": {
+                  "maxLength": 240,
+                  "title": "Title",
+                  "type": "string"
+                },
+                "ropa_ref": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Ropa Ref"
+                },
+                "trigger_reason": {
+                  "title": "Trigger Reason",
+                  "type": "string"
+                },
+                "processing_description": {
+                  "title": "Processing Description",
+                  "type": "string"
+                },
+                "necessity_and_proportionality": {
+                  "title": "Necessity And Proportionality",
+                  "type": "string"
+                },
+                "risks_to_data_subjects": {
+                  "title": "Risks To Data Subjects",
+                  "type": "string"
+                },
+                "mitigating_measures": {
+                  "title": "Mitigating Measures",
+                  "type": "string"
+                },
+                "residual_risk": {
+                  "enum": [
+                    "LOW",
+                    "MEDIUM",
+                    "HIGH"
+                  ],
+                  "title": "ResidualRiskLevel",
+                  "type": "string"
+                },
+                "residual_risk_note": {
+                  "title": "Residual Risk Note",
+                  "type": "string"
+                },
+                "dpo_consulted": {
+                  "title": "Dpo Consulted",
+                  "type": "boolean"
+                },
+                "dpo_advice": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Dpo Advice"
+                },
+                "supervisory_authority_consulted": {
+                  "default": false,
+                  "title": "Supervisory Authority Consulted",
+                  "type": "boolean"
+                },
+                "data_subjects_consulted": {
+                  "default": false,
+                  "title": "Data Subjects Consulted",
+                  "type": "boolean"
+                },
+                "outcome": {
+                  "enum": [
+                    "PROCEED",
+                    "PROCEED_WITH_MEASURES",
+                    "CONSULT_SUPERVISORY_AUTHORITY",
+                    "DO_NOT_PROCEED"
+                  ],
+                  "title": "DpiaOutcome",
+                  "type": "string"
+                },
+                "assessed_by": {
+                  "maxLength": 120,
+                  "title": "Assessed By",
+                  "type": "string"
+                },
+                "assessment_date": {
+                  "format": "date",
+                  "title": "Assessment Date",
+                  "type": "string"
+                },
+                "review_date": {
+                  "format": "date",
+                  "title": "Review Date",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "trigger_reason",
+                "processing_description",
+                "necessity_and_proportionality",
+                "risks_to_data_subjects",
+                "mitigating_measures",
+                "residual_risk",
+                "residual_risk_note",
+                "dpo_consulted",
+                "outcome",
+                "assessed_by",
+                "assessment_date",
+                "review_date"
+              ],
+              "title": "DpiaIn",
+              "type": "object"
+            },
+            "BIA": {
+              "additionalProperties": false,
+              "properties": {
+                "asset_refs": {
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Asset Refs",
+                  "type": "array"
+                },
+                "risk_refs": {
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Risk Refs",
+                  "type": "array"
+                },
+                "control_refs": {
+                  "default": [],
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Control Refs",
+                  "type": "array"
+                },
+                "process_name": {
+                  "maxLength": 240,
+                  "title": "Process Name",
+                  "type": "string"
+                },
+                "process_description": {
+                  "title": "Process Description",
+                  "type": "string"
+                },
+                "owner_role": {
+                  "maxLength": 120,
+                  "title": "Owner Role",
+                  "type": "string"
+                },
+                "rto_hours": {
+                  "minimum": 0.0,
+                  "title": "Rto Hours",
+                  "type": "number"
+                },
+                "rpo_hours": {
+                  "minimum": 0.0,
+                  "title": "Rpo Hours",
+                  "type": "number"
+                },
+                "mtpd_hours": {
+                  "exclusiveMinimum": 0.0,
+                  "title": "Mtpd Hours",
+                  "type": "number"
+                },
+                "currency": {
+                  "maxLength": 8,
+                  "minLength": 1,
+                  "title": "Currency",
+                  "type": "string"
+                },
+                "impact_1h": {
+                  "minimum": 0.0,
+                  "title": "Impact 1H",
+                  "type": "number"
+                },
+                "impact_24h": {
+                  "minimum": 0.0,
+                  "title": "Impact 24H",
+                  "type": "number"
+                },
+                "impact_1w": {
+                  "minimum": 0.0,
+                  "title": "Impact 1W",
+                  "type": "number"
+                },
+                "impact_note": {
+                  "title": "Impact Note",
+                  "type": "string"
+                },
+                "workaround": {
+                  "title": "Workaround",
+                  "type": "string"
+                },
+                "recovery_note": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "title": "Recovery Note"
+                }
+              },
+              "required": [
+                "process_name",
+                "process_description",
+                "owner_role",
+                "rto_hours",
+                "rpo_hours",
+                "mtpd_hours",
+                "currency",
+                "impact_1h",
+                "impact_24h",
+                "impact_1w",
+                "impact_note",
+                "workaround"
+              ],
+              "title": "BiaIn",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "type": "object",
+      "required": [
+        "kind",
+        "record_ref",
+        "expected_revision",
+        "owner",
+        "review_date",
+        "change_note",
+        "content"
+      ],
+      "title": "RevisionIn"
+    }
+  },
+  {
+    "group": "revisions",
+    "method": "POST",
+    "path": "/operations/revisions/{revision_id}/review",
+    "parameters": [
+      {
+        "name": "revision_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Revision Id"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "completed_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Completed On"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "note": {
+          "type": "string",
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "completed_on",
+        "evidence_ref",
+        "note"
+      ],
+      "title": "CompletionIn"
+    }
+  },
+  {
+    "group": "revisions",
+    "method": "POST",
+    "path": "/operations/reassessments/{task_id}/resolve",
+    "parameters": [
+      {
+        "name": "task_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Task Id"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "completed_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Completed On"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "note": {
+          "type": "string",
+          "title": "Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "completed_on",
+        "evidence_ref",
+        "note"
+      ],
+      "title": "CompletionIn"
+    }
+  },
+  {
+    "group": "coverage",
+    "method": "POST",
+    "path": "/operations/coverage",
+    "parameters": [],
+    "body": {
+      "properties": {
+        "control_ref": {
+          "type": "string",
+          "title": "Control Ref"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "source_system": {
+          "type": "string",
+          "title": "Source System"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "period_start": {
+          "type": "string",
+          "format": "date",
+          "title": "Period Start"
+        },
+        "period_end": {
+          "type": "string",
+          "format": "date",
+          "title": "Period End"
+        },
+        "review_date": {
+          "type": "string",
+          "format": "date",
+          "title": "Review Date"
+        },
+        "coverage_note": {
+          "type": "string",
+          "title": "Coverage Note"
+        }
+      },
+      "type": "object",
+      "required": [
+        "control_ref",
+        "evidence_ref",
+        "source_system",
+        "owner",
+        "period_start",
+        "period_end",
+        "review_date",
+        "coverage_note"
+      ],
+      "title": "CoverageIn"
+    }
+  },
+  {
+    "group": "exercises",
+    "method": "POST",
+    "path": "/operations/exercises/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "bia_ref": {
+          "type": "string",
+          "title": "Bia Ref"
+        },
+        "performed_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Performed On"
+        },
+        "recovery_hours": {
+          "type": "number",
+          "minimum": 0.0,
+          "title": "Recovery Hours"
+        },
+        "data_loss_hours": {
+          "type": "number",
+          "minimum": 0.0,
+          "title": "Data Loss Hours"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        },
+        "note": {
+          "type": "string",
+          "title": "Note"
+        },
+        "follow_up": {
+          "type": "string",
+          "title": "Follow Up"
+        }
+      },
+      "type": "object",
+      "required": [
+        "bia_ref",
+        "performed_on",
+        "recovery_hours",
+        "data_loss_hours",
+        "evidence_ref",
+        "note",
+        "follow_up"
+      ],
+      "title": "ExerciseIn"
+    }
+  },
+  {
+    "group": "monitoring",
+    "method": "PUT",
+    "path": "/monitoring/plans/{ref}",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "method": {
+          "type": "string",
+          "title": "Method"
+        },
+        "population": {
+          "type": "string",
+          "title": "Population"
+        },
+        "source": {
+          "type": "string",
+          "title": "Source"
+        },
+        "collection_owner": {
+          "type": "string",
+          "maxLength": 160,
+          "title": "Collection Owner"
+        },
+        "evaluation_owner": {
+          "type": "string",
+          "maxLength": 160,
+          "title": "Evaluation Owner"
+        },
+        "frequency": {
+          "type": "string",
+          "maxLength": 80,
+          "title": "Frequency"
+        },
+        "next_collection": {
+          "type": "string",
+          "format": "date",
+          "title": "Next Collection"
+        },
+        "expected_revision": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Revision"
+        }
+      },
+      "type": "object",
+      "required": [
+        "method",
+        "population",
+        "source",
+        "collection_owner",
+        "evaluation_owner",
+        "frequency",
+        "next_collection"
+      ],
+      "title": "PlanIn"
+    }
+  },
+  {
+    "group": "monitoring",
+    "method": "POST",
+    "path": "/monitoring/plans/{ref}/observations",
+    "parameters": [
+      {
+        "name": "ref",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Ref"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "expected_revision": {
+          "type": "integer",
+          "title": "Expected Revision"
+        },
+        "period_start": {
+          "type": "string",
+          "format": "date",
+          "title": "Period Start"
+        },
+        "period_end": {
+          "type": "string",
+          "format": "date",
+          "title": "Period End"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "source_query": {
+          "type": "string",
+          "title": "Source Query"
+        },
+        "population": {
+          "type": "string",
+          "title": "Population"
+        },
+        "evidence_ref": {
+          "type": "string",
+          "title": "Evidence Ref"
+        }
+      },
+      "type": "object",
+      "required": [
+        "expected_revision",
+        "period_start",
+        "period_end",
+        "value",
+        "source_query",
+        "population",
+        "evidence_ref"
+      ],
+      "title": "ObservationIn"
+    }
+  },
+  {
+    "group": "observations",
+    "method": "POST",
+    "path": "/monitoring/observations/{observation_id}/evaluate",
+    "parameters": [
+      {
+        "name": "observation_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Observation Id"
+        }
+      }
+    ],
+    "body": {
+      "properties": {
+        "evaluated_on": {
+          "type": "string",
+          "format": "date",
+          "title": "Evaluated On"
+        },
+        "note": {
+          "type": "string",
+          "title": "Note"
+        },
+        "remediation_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Remediation Ref"
+        }
+      },
+      "type": "object",
+      "required": [
+        "evaluated_on",
+        "note"
+      ],
+      "title": "EvaluationIn"
+    }
+  },
+  {
+    "group": "notifications",
+    "method": "PUT",
+    "path": "/notifications/routing",
+    "parameters": [],
+    "body": {
+      "properties": {
+        "owner": {
+          "type": "string",
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Owner"
+        },
+        "username": {
+          "type": "string",
+          "title": "Username"
+        }
+      },
+      "type": "object",
+      "required": [
+        "owner",
+        "username"
+      ],
+      "title": "RouteIn"
+    }
+  },
+  {
+    "group": "notifications",
+    "method": "POST",
+    "path": "/notifications/run",
+    "parameters": [],
+    "body": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "group": "notifications",
+    "method": "POST",
+    "path": "/notifications/{notification_id}/acknowledge",
+    "parameters": [
+      {
+        "name": "notification_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Notification Id"
+        }
+      }
+    ],
+    "body": {
+      "type": "object",
+      "properties": {}
+    }
+  }
+]

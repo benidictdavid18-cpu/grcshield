@@ -4,7 +4,7 @@ import { useAsync } from '../useAsync'
 export function Reports() {
   const { data, error, loading } = useAsync(() => api.reports(), [])
 
-  if (loading) return <p className="empty">Loading reports…</p>
+  if (loading) return <p className="skeleton" role="status">Loading reports…</p>
   if (error) return <p className="error">Could not load reports: {error}</p>
   if (!data) return null
 

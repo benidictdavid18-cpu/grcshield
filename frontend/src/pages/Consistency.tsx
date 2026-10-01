@@ -1,3 +1,4 @@
+import { Reference } from '../RecordDrawer'
 /* The consistency sweep — the assistant used as a reviewer rather than a writer.
  *
  * The page is a queue, not a chat box, and that is the whole design. Rules decide which
@@ -9,12 +10,7 @@
 
 import { useState } from 'react'
 
-import {
-  AiRequestError,
-  aiApi,
-  type AiConsistencySweep,
-  type SweepCandidate,
-} from '../ai'
+import { AiRequestError, aiApi, type AiConsistencySweep, type SweepCandidate } from '../ai'
 import { useAsync } from '../useAsync'
 
 interface SweepState {
@@ -39,9 +35,9 @@ function Findings({ data }: { data: AiConsistencySweep }) {
 
       {contradictions.length === 0 ? (
         <p className="muted">
-          The assistant reported no disagreement between these records. That is a claim
-          about its reading, not a guarantee — it is one more opinion on the pile, and a
-          clean sweep is worth roughly what a clean sweep by a junior reviewer is worth.
+          The assistant reported no disagreement between these records. That is a claim about its
+          reading, not a guarantee — it is one more opinion on the pile, and a clean sweep is worth
+          roughly what a clean sweep by a junior reviewer is worth.
         </p>
       ) : (
         <ol className="sweep-list">
@@ -70,12 +66,12 @@ function Findings({ data }: { data: AiConsistencySweep }) {
         <div className="banner banner-warn" role="note">
           <strong>
             {data.uncited_records.length} finding
-            {data.uncited_records.length === 1 ? ' was' : 's were'} dropped for citing a
-            record the model was never shown:
+            {data.uncited_records.length === 1 ? ' was' : 's were'} dropped for citing a record the
+            model was never shown:
           </strong>{' '}
-          {data.uncited_records.join(', ')}. An invented disagreement between two
-          real-sounding record numbers reads exactly like a real one, so citations are
-          checked against what was actually supplied.
+          {data.uncited_records.join(', ')}. An invented disagreement between two real-sounding
+          record numbers reads exactly like a real one, so citations are checked against what was
+          actually supplied.
         </div>
       )}
 
@@ -129,11 +125,11 @@ function CandidateRow({ candidate }: { candidate: SweepCandidate }) {
       <div className="sweep-head">
         <div>
           <h3>
-            <code>{candidate.control_id}</code> {candidate.title}
+            <Reference value={candidate.control_id} /> {candidate.title}
           </h3>
           <p className="card-meta">
-            {candidate.record_count} records across {candidate.record_types.length} parts of
-            the ISMS — {candidate.record_types.join(', ')}
+            {candidate.record_count} records across {candidate.record_types.length} parts of the
+            ISMS — {candidate.record_types.join(', ')}
           </p>
         </div>
         <button type="button" onClick={sweep} disabled={state.loading}>
@@ -149,8 +145,8 @@ function CandidateRow({ candidate }: { candidate: SweepCandidate }) {
 
       {state.loading && (
         <p className="empty">
-          Reading {candidate.record_count} records on this machine. Nothing else in the
-          application is waiting on it.
+          Reading {candidate.record_count} records on this machine. Nothing else in the application
+          is waiting on it.
         </p>
       )}
 
@@ -165,8 +161,7 @@ function CandidateRow({ candidate }: { candidate: SweepCandidate }) {
               : 'The assistant could not answer.'}
           </strong>{' '}
           {state.error.message}
-          {state.error.unavailable &&
-            ' The queue above is computed without it and is unaffected.'}
+          {state.error.unavailable && ' The queue above is computed without it and is unaffected.'}
         </div>
       )}
 
@@ -182,19 +177,19 @@ export function Consistency() {
     <section>
       <h1>Consistency sweep</h1>
       <p className="lede">
-        An ISMS goes wrong quietly. The same fact is recorded in several places, one of
-        them is updated, and the others keep saying what used to be true. No validation
-        rule catches that in general — the rule would have to be written once per pair of
-        record types — but reading the records side by side does.
+        An ISMS goes wrong quietly. The same fact is recorded in several places, one of them is
+        updated, and the others keep saying what used to be true. No validation rule catches that in
+        general — the rule would have to be written once per pair of record types — but reading the
+        records side by side does.
       </p>
 
       <div className="banner banner-todo" role="note">
-        <strong>Rules pick the queue; the model does the reading.</strong> The list below
-        is a plain database query: controls referenced from several parts of the system
-        that also carry some tension — a failed test, an open finding, expired evidence,
-        a risk claiming more assurance than the library supports. Those are the only
-        places a contradiction can exist. The assistant is pointed at one at a time, and
-        it reports disagreements rather than settling them.
+        <strong>Rules pick the queue; the model does the reading.</strong> The list below is a plain
+        database query: controls referenced from several parts of the system that also carry some
+        tension — a failed test, an open finding, expired evidence, a risk claiming more assurance
+        than the library supports. Those are the only places a contradiction can exist. The
+        assistant is pointed at one at a time, and it reports disagreements rather than settling
+        them.
       </div>
 
       {loading && <p className="empty">Working out where to look…</p>}
@@ -202,8 +197,8 @@ export function Consistency() {
 
       {data && data.length === 0 && (
         <p className="empty">
-          No control is referenced from enough places, with enough tension, to be worth
-          sweeping. That is a good state and an unusual one.
+          No control is referenced from enough places, with enough tension, to be worth sweeping.
+          That is a good state and an unusual one.
         </p>
       )}
 

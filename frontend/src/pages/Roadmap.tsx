@@ -4,7 +4,7 @@ import { useAsync } from '../useAsync'
 export function Roadmap() {
   const { data, error, loading } = useAsync(() => api.frameworks(), [])
 
-  if (loading) return <p className="empty">Loading…</p>
+  if (loading) return <p className="skeleton" role="status">Loading…</p>
   if (error) return <p className="error">Could not load frameworks: {error}</p>
 
   const roadmap = (data ?? []).filter((framework) => framework.scope_status === 'ROADMAP')

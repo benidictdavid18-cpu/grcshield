@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useViewState } from '../useViewState'
+import { LiveTable } from '../LiveTable'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
 import { api, type RiskBand } from '../api'
@@ -10,8 +12,8 @@ const BAND_ORDER: RiskBand[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
 export function RiskRegister() {
   const risks = useAsync(() => api.risks(), [])
   const summary = useAsync(() => api.riskSummary(), [])
-  const [onlyBreaching, setOnlyBreaching] = useState(false)
-  const [category, setCategory] = useState('all')
+  const [onlyBreaching, setOnlyBreaching] = useViewState('breach', 'all', ['all', 'yes'])
+  const [category, setCategory] = useViewState<string>('category', 'all')
 
   const categories = useMemo(() => {
     const seen = new Map<string, string>()
@@ -21,7 +23,7 @@ export function RiskRegister() {
 
   const filtered = useMemo(() => {
     return (risks.data ?? []).filter((risk) => {
-      if (onlyBreaching && risk.appetite.exceeds_appetite !== true) return false
+      if (onlyBreaching === 'yes' && risk.appetite.exceeds_appetite !== true) return false
       if (category !== 'all' && risk.category !== category) return false
       return true
     })
@@ -33,9 +35,9 @@ export function RiskRegister() {
     <section>
       <h1>Risk register</h1>
       <p className="lede">
-        Inherent and residual risk are scored independently. Residual is not derived from
-        inherent by applying a control-effectiveness percentage — an analyst sets it directly
-        and justifies it in writing.
+        Inherent and residual risk are scored independently. Residual is not derived from inherent
+        by applying a control-effectiveness percentage — an analyst sets it directly and justifies
+        it in writing.
       </p>
 
       {summary.data && (
@@ -83,17 +85,17 @@ export function RiskRegister() {
         <label className="checkbox">
           <input
             type="checkbox"
-            checked={onlyBreaching}
-            onChange={(event) => setOnlyBreaching(event.target.checked)}
+            checked={onlyBreaching === 'yes'}
+            onChange={(event) => setOnlyBreaching(event.target.checked ? 'yes' : 'all')}
           />
           Above appetite only
         </label>
         <span className="filter-count">{filtered.length} shown</span>
       </div>
 
-      {risks.loading && <p className="empty">Loading register…</p>}
+      {risks.loading && <p className="skeleton" role="status">Loading register…</p>}
 
-      <table className="register">
+      <LiveTable id="riskregister-1">
         <thead>
           <tr>
             <th>Ref</th>
@@ -155,7 +157,7 @@ export function RiskRegister() {
               </tr>
             ))}
         </tbody>
-      </table>
+      </LiveTable>
 
       {!risks.loading && filtered.length === 0 && (
         <p className="empty">No risks match that filter.</p>

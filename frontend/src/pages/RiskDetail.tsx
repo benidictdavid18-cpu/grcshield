@@ -1,3 +1,5 @@
+import { Reference } from '../RecordDrawer'
+import { RiskGraph } from '../RiskGraph'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
@@ -88,8 +90,8 @@ function RiskDescriptionBody({ data }: { data: AiRiskDescription }) {
       </AiSection>
       <AiText heading="Drafted statement" value={s.risk_statement} />
       <p className="muted">
-        Nothing above has been saved. Putting it in the register is a separate,
-        deliberate act through the endpoints that validate it.
+        Nothing above has been saved. Putting it in the register is a separate, deliberate act
+        through the endpoints that validate it.
       </p>
       <AiGaps items={s.missing_information} />
     </>
@@ -104,15 +106,15 @@ function ControlMappingBody({ data }: { data: AiControlMapping }) {
       <AiSection heading="Annex A controls to consider">
         {data.resolved_controls.length === 0 ? (
           <p className="muted">
-            Nothing survived the catalogue check. Every identifier the model produced was
-            outside ISO/IEC 27001:2022 Annex A.
+            Nothing survived the catalogue check. Every identifier the model produced was outside
+            ISO/IEC 27001:2022 Annex A.
           </p>
         ) : (
           <ul className="ai-list ai-controls">
             {data.resolved_controls.map((control) => (
               <li key={control.control_ref}>
                 <div className="chain-row">
-                  <code className="chain-ref">{control.control_ref}</code>
+                  <Reference value={control.control_ref} />
                   <span>{control.title}</span>
                   {control.already_linked && (
                     <span className="tag tag-ok">already linked to this risk</span>
@@ -124,9 +126,8 @@ function ControlMappingBody({ data }: { data: AiControlMapping }) {
                 <p>{control.reason}</p>
                 {control.soa_implementation_status && (
                   <p className="muted">
-                    Statement of Applicability:{' '}
-                    {control.soa_applicable ? 'applicable' : 'excluded'},{' '}
-                    {control.soa_implementation_status.replace(/_/g, ' ').toLowerCase()}.
+                    Statement of Applicability: {control.soa_applicable ? 'applicable' : 'excluded'}
+                    , {control.soa_implementation_status.replace(/_/g, ' ').toLowerCase()}.
                   </p>
                 )}
               </li>
@@ -150,8 +151,8 @@ function ControlMappingBody({ data }: { data: AiControlMapping }) {
       )}
 
       <p className="muted">
-        A suggestion is not an applicability decision. Marking a control applicable, with
-        a justification that survives the SoA rules, stays with the analyst.
+        A suggestion is not an applicability decision. Marking a control applicable, with a
+        justification that survives the SoA rules, stays with the analyst.
       </p>
       <AiGaps items={data.suggestion.missing_information} />
     </>
@@ -167,8 +168,13 @@ export function RiskDetail() {
   const [version, setVersion] = useState(0)
   const { data: risk, error, loading } = useAsync(() => api.risk(riskRef), [riskRef, version])
 
-  if (loading) return <p className="empty">Loading risk…</p>
-  if (error) return <p className="error">Could not load {riskRef}: {error}</p>
+  if (loading) return <p className="skeleton" role="status">Loading risk…</p>
+  if (error)
+    return (
+      <p className="error">
+        Could not load {riskRef}: {error}
+      </p>
+    )
   if (!risk) return null
 
   const riskActions: AiAction[] = [
@@ -220,8 +226,8 @@ export function RiskDetail() {
       {uncredited.length > 0 && (
         <div className="banner banner-warn" role="alert">
           <strong>
-            {uncredited.length} linked control{uncredited.length > 1 ? 's' : ''} may not be
-            credited with any residual reduction.
+            {uncredited.length} linked control{uncredited.length > 1 ? 's' : ''} may not be credited
+            with any residual reduction.
           </strong>{' '}
           {uncredited.map((control) => control.control_id).join(', ')} —{' '}
           {uncredited.every((control) => control.effectiveness_basis === 'NOT_TESTED')
@@ -235,12 +241,13 @@ export function RiskDetail() {
 
       {justificationOutstanding && (
         <div className="banner banner-todo" role="note">
-          <strong>Residual justification not yet written.</strong> This field is reserved for
-          the author and is not machine-generated.
+          <strong>Residual justification not yet written.</strong> This field is reserved for the
+          author and is not machine-generated.
         </div>
       )}
 
-      {/* The calculation, rendered as a chain rather than a result. */}
+      <RiskGraph risk={risk} />
+      {/* Detailed scoring rationale remains below the evidence graph. */}
       <div className="chain">
         <ScoreBlock
           label="1. Inherent risk"
@@ -256,9 +263,12 @@ export function RiskDetail() {
           <h3>2. Controls applied</h3>
           <ul className="control-list">
             {risk.controls.map((control) => (
-              <li key={control.control_id} className={control.credits_reduction ? '' : 'uncredited'}>
+              <li
+                key={control.control_id}
+                className={control.credits_reduction ? '' : 'uncredited'}
+              >
                 <div className="control-head">
-                  <code>{control.control_id}</code>
+                  <Reference value={control.control_id} />
                   <span className={`basis basis-${control.effectiveness_basis.toLowerCase()}`}>
                     {BASIS_LABEL[control.effectiveness_basis]}
                   </span>
@@ -339,8 +349,8 @@ export function RiskDetail() {
           {risk.appetite.approver_role && (
             <p className="muted">
               Appetite for {risk.category_label} is set and accepted by the{' '}
-              {risk.appetite.approver_role}. Risk acceptance is a business decision, not a
-              security decision.
+              {risk.appetite.approver_role}. Risk acceptance is a business decision, not a security
+              decision.
             </p>
           )}
         </div>
