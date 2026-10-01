@@ -511,7 +511,7 @@ review. Keeping inference local removes the question rather than answering it.
 ## Verification
 
 ```bash
-# 547 tests — rules, API contracts, the migration chain, the audit trail, hardening, and the AI layer
+# 554 tests — rules, API contracts, the migration chain, the audit trail, hardening, and the AI layer
 cd backend && pytest -q
 
 # Lint: import order, unused imports, bare re-raises
@@ -575,7 +575,7 @@ backend/
     services/           risk_scoring, soa_validation, control_testing, privacy_continuity,
                         kri_engine, executive, audit_trail
       ai/               provider, ollama, context, prompts, response, guardrails, service
-  tests/                547 tests
+  tests/                554 tests
 frontend/
   Dockerfile            three stages: dev (Vite), build, serve (nginx)
   nginx.conf            static bundle, /api proxy, the page's own security headers

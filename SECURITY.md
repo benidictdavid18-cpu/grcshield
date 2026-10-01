@@ -310,6 +310,21 @@ would be the first thing to add before this ran anywhere shared.
 
 ---
 
+## Backup and restore
+
+The platform's own data, not FinFlow's. Evidence attachments live in the database as
+`LargeBinary`, so one archive covers records and attachment bytes together, rather than
+two artifacts taken at different moments.
+
+A restore refuses three cases rather than warning about them: an archive whose body does
+not match its recorded digest, an archive taken under a different migration revision, and
+a target that already holds data when replacement was not asked for. The round trip and
+all three refusals are exercised in `backend/tests/test_backup.py`.
+
+See [docs/BACKUP.md](docs/BACKUP.md).
+
+---
+
 ## Known gaps
 
 Stated plainly. This is a portfolio project; the point is knowing what is missing, not
@@ -329,7 +344,6 @@ pretending it is complete.
 | **Dependency audit is advisory** | `pip-audit` and `npm audit` run on every push but do not fail the build. | Pinned versions accumulate advisories faster than a portfolio project bumps them; a red build nobody can act on trains people to ignore red builds. The report is in the CI log. |
 | **`docker compose up` is verified only in CI** | The compose job builds and starts the stack on a clean runner and runs the smoke test against PostgreSQL. It has never run on the author's machine, where Docker Desktop crashes. | The runner is the more honest environment anyway: no cached images, no local state. |
 | **No multi-tenancy** | One organisation, no data isolation. | Not in scope for a single-company ISMS demo. |
-| **No backups or retention on the app's own data** | The tool that tracks FinFlow's backup control has no backup story of its own. | Demo. |
 
 ### Containers
 
