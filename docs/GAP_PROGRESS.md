@@ -16,8 +16,9 @@ tracks subsequent implementation, including remaining author work and verificati
 | G07 | Implemented; source release awaits author review | Migration 0016; immutable 93-control snapshots, authorized sign-off, diff, evidence-limitations acknowledgement and draft-aware UI/PDF; eight new tests. |
 | G08 | Implemented; sample commitments await author agreement | Migration 0017; resources, milestones/dependencies, business approval, evidence-backed closure and database-enforced review deadlines; eight new tests. |
 | G09 | Implemented; targets and change decisions await author input | Migration 0018; objectives and planned ISMS changes, reviewed context, resources, leadership approval, evidence-backed implementation and retained evaluations; seven new tests. Seed targets remain unset and risk-scale guidance remains a draft. |
-| G10–G21 | Open | Proceed in ranked order. |
-| G22 | Phase 4 | Full interface overhaul begins after the record lifecycles. |
+| G10 | Implemented locally; programme judgments await author input | Migration 0019; maintained audit programmes, frozen audit/review completion, structured review inputs, tracked actions and retained corrective-effectiveness checks; eight tests pass. Verified with 499 backend tests and static seed checks; new G10 files pass lint. |
+| G11–G21 | Open | Proceed in ranked order. |
+| G22 | Phase 4 | In progress: user requested limited Phase 3 wrap-up and priority on the interface. |
 
 Baseline: 419 backend tests and eight frontend tests. G01: 428 backend passed;
 G02: 436 backend passed; G03: 442 backend passed; G04: 449; G05: 457; G06: 468; G07: 476; G08: 484; G09: 491. Frontend tests and typecheck pass after the acceptance display
@@ -26,3 +27,31 @@ final inventory remain Phase 5/6 work; they have not been claimed complete.
 
 The original risk engine and existing validators have not been rewritten. New rules
 live in separate focused services. No real audit or certification outcome is asserted.
+
+## Recovered checkpoint — 2026-09-22
+
+Recovered the working repository at C:\proj\grc after the Codex reinstall. The
+previous chat was not recovered. HEAD is eefebce (G09); the existing uncommitted
+G10 implementation was preserved and its six new Python modules/test file were
+formatted and their imports sorted.
+
+Verification: 493 backend tests passed on the full run; six tests encountered a
+Windows temporary-directory permission error during setup. Rerunning the migration
+module, the affected treatment migration test and the assurance tests with a writable
+workspace basetemp passed all 17 selected tests. Thus all 499 collected backend tests
+have passed across these runs. Static seed checks and lint on the six new G10 Python
+files pass. Repository-wide lint remains failing outside those files; it must be
+resolved before claiming CI is green. Live smoke, frontend integration and final
+browser verification remain pending as described above.
+
+Next checkpoint: review the G10 diff and remaining integration lint, then proceed to
+G11 (incident and event register) in the ranked assessment. Do not invent author
+judgments or claim sample records have real audit evidence.
+
+
+Git commits remain blocked by index.lock access denial, including after explicit permission grants. No successful commit or push is claimed.
+
+## Scope adjustment  -  2026-09-28
+
+At the author's request, keep the Phase 3 wrap-up small and proceed to Phase 4.
+G19-G21 are partial, not closed. No backup recovery or production readiness claim is made.
